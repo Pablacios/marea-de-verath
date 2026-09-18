@@ -36,22 +36,22 @@
      Réplica del modelo de estadísticas: cada uno toca una estadística global
      que luego multiplica a todas las armas. */
   V.PASSIVES = {
-    espinaca:  {name:"Sangre de Hierro", glyph:"◆", color:"#C2263A", max:5, stat:"might",     step:0.10, text:"+10% de daño"},
-    coraza:    {name:"Coraza",           glyph:"▣", color:"#8A8C9E", max:5, stat:"armor",     step:1,    text:"−1 de daño recibido"},
-    corazon:   {name:"Corazón Hueco",    glyph:"♥", color:"#B03040", max:5, stat:"maxHealth", step:0.20, text:"+20% de vida máxima"},
-    pomarola:  {name:"Hierba de Sangre", glyph:"✚", color:"#5FBF6A", max:5, stat:"recovery",  step:0.25, text:"+0,25 de vida por segundo"},
-    tomo:      {name:"Tomo Vacío",       glyph:"▭", color:"#8FA8FF", max:5, stat:"cooldown",  step:-0.08,text:"−8% de recarga"},
-    candelabro:{name:"Candelabro",       glyph:"◎", color:"#E5C34A", max:5, stat:"area",      step:0.10, text:"+10% de área"},
-    brazal:    {name:"Brazal",           glyph:"➤", color:"#C9CEDC", max:5, stat:"speed",     step:0.10, text:"+10% de velocidad de proyectil"},
-    encantador:{name:"Encantador",       glyph:"∞", color:"#C08BEF", max:5, stat:"duration",  step:0.10, text:"+10% de duración"},
-    duplicador:{name:"Duplicador",       glyph:"⁝", color:"#FFE066", max:2, stat:"amount",    step:1,    text:"+1 proyectil"},
-    alas:      {name:"Alas",             glyph:"⇈", color:"#E8EEFF", max:5, stat:"moveSpeed", step:0.10, text:"+10% de velocidad"},
-    iman:      {name:"Piedra Imán",      glyph:"◌", color:"#46E0C8", max:5, stat:"magnet",    step:0.25, text:"+25% de radio de recogida"},
-    trebol:    {name:"Trébol",           glyph:"✧", color:"#7CC6FF", max:5, stat:"luck",      step:0.10, text:"+10% de suerte"},
-    corona:    {name:"Corona",           glyph:"♛", color:"#E5B95C", max:5, stat:"growth",    step:0.08, text:"+8% de experiencia"},
-    mascara:   {name:"Máscara de Piedra",glyph:"☗", color:"#9A7220", max:5, stat:"greed",     step:0.10, text:"+10% de oro"},
-    calavera:  {name:"Calavera Maldita", glyph:"☠", color:"#A9B6D6", max:5, stat:"curse",     step:0.10, text:"+10% de enemigos… y de recompensa"},
-    tiramisu:  {name:"Reliquia",         glyph:"❂", color:"#FFD36B", max:2, stat:"revival",   step:1,    text:"Revives una vez más"}
+    espinaca:  {name:"Sangre de Hierro", glyph:"◆", ico:"p_espinaca", color:"#C2263A", max:5, stat:"might",     step:0.10, text:"+10% de daño"},
+    coraza:    {name:"Coraza",           glyph:"▣", ico:"p_coraza", color:"#8A8C9E", max:5, stat:"armor",     step:1,    text:"−1 de daño recibido"},
+    corazon:   {name:"Corazón Hueco",    glyph:"♥", ico:"p_corazon", color:"#B03040", max:5, stat:"maxHealth", step:0.20, text:"+20% de vida máxima"},
+    pomarola:  {name:"Hierba de Sangre", glyph:"✚", ico:"p_pomarola", color:"#5FBF6A", max:5, stat:"recovery",  step:0.25, text:"+0,25 de vida por segundo"},
+    tomo:      {name:"Tomo Vacío",       glyph:"▭", ico:"p_tomo", color:"#8FA8FF", max:5, stat:"cooldown",  step:-0.08,text:"−8% de recarga"},
+    candelabro:{name:"Candelabro",       glyph:"◎", ico:"p_candelabro", color:"#E5C34A", max:5, stat:"area",      step:0.10, text:"+10% de área"},
+    brazal:    {name:"Brazal",           glyph:"➤", ico:"p_brazal", color:"#C9CEDC", max:5, stat:"speed",     step:0.10, text:"+10% de velocidad de proyectil"},
+    encantador:{name:"Encantador",       glyph:"∞", ico:"p_encantador", color:"#C08BEF", max:5, stat:"duration",  step:0.10, text:"+10% de duración"},
+    duplicador:{name:"Duplicador",       glyph:"⁝", ico:"p_duplicador", color:"#FFE066", max:2, stat:"amount",    step:1,    text:"+1 proyectil"},
+    alas:      {name:"Alas",             glyph:"⇈", ico:"p_alas", color:"#E8EEFF", max:5, stat:"moveSpeed", step:0.10, text:"+10% de velocidad"},
+    iman:      {name:"Piedra Imán",      glyph:"◌", ico:"p_iman", color:"#46E0C8", max:5, stat:"magnet",    step:0.25, text:"+25% de radio de recogida"},
+    trebol:    {name:"Trébol",           glyph:"✧", ico:"p_trebol", color:"#7CC6FF", max:5, stat:"luck",      step:0.10, text:"+10% de suerte"},
+    corona:    {name:"Corona",           glyph:"♛", ico:"p_corona", color:"#E5B95C", max:5, stat:"growth",    step:0.08, text:"+8% de experiencia"},
+    mascara:   {name:"Máscara de Piedra",glyph:"☗", ico:"p_mascara", color:"#9A7220", max:5, stat:"greed",     step:0.10, text:"+10% de oro"},
+    calavera:  {name:"Calavera Maldita", glyph:"☠", ico:"p_calavera", color:"#A9B6D6", max:5, stat:"curse",     step:0.10, text:"+10% de enemigos… y de recompensa"},
+    tiramisu:  {name:"Reliquia",         glyph:"❂", ico:"p_reliquia", color:"#FFD36B", max:2, stat:"revival",   step:1,    text:"Revives una vez más"}
   };
   V.PASSIVE_KEYS = Object.keys(V.PASSIVES);
 
@@ -66,6 +66,9 @@
     monja:    {hp:40,  speed:62, dmg:15, r:11, spr:"f_monja",   xp:2, gold:.09},
     gargola:  {hp:150, speed:56, dmg:24, r:14, spr:"f_gargola", xp:5, gold:.18},
     elite:    {hp:1500,speed:50, dmg:34, r:28, spr:"f_elite",   xp:70, gold:1, elite:true},
+    /* la "luz": el equivalente a las antorchas y candelabros rompibles del
+       mapa. Es un enemigo inmóvil y sin daño para reaprovechar colisiones. */
+    luz:      {hp:1,   speed:0,  dmg:0,  r:12, spr:null,        xp:0, gold:0, light:true},
     segadora: {hp:999999,speed:120,dmg:9999,r:30,spr:"f_segadora",xp:0, gold:0, reaper:true}
   };
 
@@ -87,7 +90,8 @@
       fog:"rgba(60,10,18,.20)",
       moon:"#C2263A",
       accent:"#8E1F2F",
-      foes:["aldeano","sabueso","cuervo","bruto"],
+      mods:{start:10, speed:1.00, lightChance:0.10, maxLights:10},
+      foes:["aldeano","cuervo","sabueso","ahorcado","bruto","gargola"],
       deco:function(g,x,y,C,n){
         if(n > 0.955){ // farola de gas
           g.fillStyle = "#14121C"; g.fillRect(x+28, y+16, 5, 34);
@@ -114,7 +118,8 @@
       fog:"rgba(20,40,20,.22)",
       moon:"#C8D68A",
       accent:"#5A7A3A",
-      foes:["ahorcado","lobo","cuervo","bruto"],
+      mods:{start:12, speed:1.10, lightChance:0.10, maxLights:10},
+      foes:["ahorcado","cuervo","lobo","monja","bruto","gargola"],
       deco:function(g,x,y,C,n){
         if(n > 0.94){ // árbol con soga
           g.fillStyle = "#1A1410"; g.fillRect(x+28, y+10, 7, 40);
@@ -140,7 +145,8 @@
       fog:"rgba(80,60,130,.20)",
       moon:"#DCD2F0",
       accent:"#8A6ECF",
-      foes:["monja","gargola","cuervo","ahorcado"],
+      mods:{start:8,  speed:0.95, lightChance:0.14, maxLights:12},
+      foes:["monja","cuervo","ahorcado","lobo","gargola","bruto"],
       deco:function(g,x,y,C,n){
         if(n > 0.95){ // columna
           g.fillStyle = "#262238"; g.fillRect(x+22, y+6, 18, 46);
@@ -162,39 +168,81 @@
   };
   V.STAGE_KEYS = Object.keys(V.STAGES);
 
-  /* ================= GUION DE OLEADAS =================
-     Índices 0..3 apuntan al elenco del mapa elegido, así los tres
-     comparten curva pero no enemigos. */
-  V.STREAMS = [
-    {a:0,    b:210,  foe:0, every:1.05, n:4},
-    {a:55,   b:330,  foe:1, every:1.45, n:3},
-    {a:150,  b:480,  foe:2, every:1.70, n:3},
-    {a:270,  b:660,  foe:1, every:1.05, n:4},
-    {a:330,  b:1200, foe:0, every:0.85, n:5},
-    {a:390,  b:840,  foe:3, every:3.20, n:1},
-    {a:540,  b:1200, foe:2, every:1.00, n:5},
-    {a:690,  b:1200, foe:1, every:0.75, n:6},
-    {a:840,  b:1200, foe:3, every:1.80, n:2},
-    {a:960,  b:1200, foe:0, every:0.55, n:8},
-    {a:1080, b:1200, foe:2, every:0.60, n:8}
+  /* ================= REGLAS DE PARTIDA =================
+     Réplica de las reglas del juego original, tomadas de su wiki.
+
+     Experiencia: subir de nivel 1 a 2 cuesta 5; cada nivel siguiente pide
+     10 más que el anterior. En el nivel 20 el escalón sube a 13 y se añade
+     un salto de 600; en el 40 sube a 16 y se añade otro de 2400. */
+  V.xpNeed = function(lvl){
+    if(lvl < 20) return 5 + 10*(lvl-1);
+    if(lvl < 40) return 795 + 13*(lvl-20);
+    return 3455 + 16*(lvl-40);
+  };
+
+  /* Gemas: el color lo decide el valor, no el enemigo.
+     Azul hasta 2, verde hasta 9, roja por encima. */
+  V.gemTier = function(v){ return v<=2 ? 0 : (v<=9 ? 1 : 2); };
+  V.GEM_COLORS = [["#2E6BD8","#7CC6FF"], ["#1E8C4A","#6FE08A"], ["#9A1030","#FF5A72"]];
+  V.GEM_CAP = 400;          // por encima, todo se funde en una gema roja
+  V.FOE_CAP = 300;          // tope de enemigos vivos; solo jefes lo saltan
+
+  /* Recogibles que sueltan las luces del mapa, con su rareza relativa. */
+  V.POWERUPS = [
+    {kind:"rosario", w:1,  name:"Rosario",   text:"Arrasa con todo lo que ves"},
+    {kind:"llama",   w:1,  name:"Fuego fatuo", text:"Escupe llamas diez segundos"},
+    {kind:"reloj",   w:2,  name:"Reloj de arena", text:"Congela el tiempo diez segundos"},
+    {kind:"vacio",   w:2,  name:"Llamada del vacío", text:"Atrae todas las gemas"},
+    {kind:"carne",   w:3,  name:"Festín",    text:"+30 de vida"}
   ];
-  V.EVENTS = [
-    {t:105,  kind:"ring", foe:0, n:32},
-    {t:180,  kind:"elite"},
-    {t:245,  kind:"wall", foe:1, n:28},
-    {t:330,  kind:"ring", foe:2, n:38},
-    {t:360,  kind:"elite"},
-    {t:450,  kind:"wall", foe:0, n:34},
-    {t:540,  kind:"elite"},
-    {t:615,  kind:"ring", foe:3, n:20},
-    {t:720,  kind:"elite"},
-    {t:800,  kind:"wall", foe:3, n:14},
-    {t:900,  kind:"elite"},
-    {t:980,  kind:"ring", foe:1, n:54},
-    {t:1080, kind:"elite"},
-    {t:1140, kind:"ring", foe:3, n:24},
-    {t:1200, kind:"reaper"}
+
+  /* ================= OLEADAS, MINUTO A MINUTO =================
+     Igual que en el original: cada minuto define qué enemigos salen, un
+     mínimo de enemigos vivos y cada cuánto se comprueba. Si al comprobar
+     no se llega al mínimo, se generan hasta llenarlo. La maldición sube
+     cantidad y frecuencia; 'mul' es la fuerza de ese escalón.
+     'f' son índices del elenco del mapa (0 el más débil, 5 el más duro). */
+  V.WAVES = [
+    {f:[0],     min:15,  every:1.0, mul:1.0},
+    {f:[0,1],   min:30,  every:1.0, mul:1.0, boss:1},
+    {f:[1],     min:50,  every:0.9, mul:1.1, ev:{kind:"ring", f:1, n:32}},
+    {f:[0,2],   min:40,  every:0.9, mul:1.2, boss:1},
+    {f:[2,3],   min:30,  every:1.0, mul:1.3},
+    {f:[3],     min:20,  every:1.0, mul:1.4, boss:1, ev:{kind:"wall", f:3, n:28}},
+    {f:[1,3],   min:40,  every:0.9, mul:1.5},
+    {f:[2,3],   min:80,  every:0.8, mul:1.6, boss:1, ev:{kind:"ring", f:2, n:40}},
+    {f:[0,1],   min:100, every:0.7, mul:1.7},
+    {f:[3,4],   min:40,  every:0.9, mul:1.8, boss:1},
+    {f:[4],     min:20,  every:1.2, mul:2.0, boss:1, ev:{kind:"wall", f:4, n:16}},
+    {f:[2],     min:150, every:0.6, mul:2.0},
+    {f:[3,4],   min:40,  every:0.9, mul:2.2, boss:1},
+    {f:[1,2],   min:120, every:0.6, mul:2.2, ev:{kind:"ring", f:1, n:52}},
+    {f:[4,5],   min:30,  every:1.1, mul:2.5, boss:1},
+    {f:[3,4],   min:100, every:0.7, mul:2.5, boss:1},
+    {f:[2,4],   min:100, every:0.7, mul:2.8},
+    {f:[5],     min:25,  every:1.3, mul:3.0},
+    {f:[4,5],   min:60,  every:0.9, mul:3.0, boss:1},
+    {f:[4,5],   min:100, every:0.7, mul:3.3},
+    {f:[3,4,5], min:110, every:0.7, mul:3.6, boss:1, ev:{kind:"ring", f:5, n:26}},
+    {f:[2],     min:200, every:0.5, mul:3.6},
+    {f:[4,5],   min:150, every:0.6, mul:4.0, boss:1},
+    {f:[5],     min:200, every:0.5, mul:4.0, boss:1},
+    {f:[4,5],   min:200, every:0.5, mul:4.4},
+    {f:[5],     min:120, every:0.7, mul:4.8, boss:1, ev:{kind:"wall", f:5, n:22}},
+    {f:[4,5],   min:160, every:0.6, mul:5.0},
+    {f:[2,3],   min:250, every:0.5, mul:5.2, ev:{kind:"ring", f:2, n:60}},
+    {f:[1,4],   min:250, every:0.5, mul:5.6},
+    {f:[0,5],   min:280, every:0.5, mul:6.0, boss:1}
   ];
+
+  /* Cofres: solo los sueltan los jefes. Se tira primero a cinco objetos,
+     luego a tres, luego a uno; la suerte multiplica cada tirada. */
+  V.CHEST = {
+    five:{p:0.03, gold:[500,1000], n:5},
+    three:{p:0.10, gold:[300,600], n:3},
+    one:{p:0.50, gold:[100,200], n:1}
+  };
+  V.EVO_FROM = 600;   // no hay evoluciones antes del minuto diez
 
   /* ================= SANTUARIO ================= */
   V.BLESSINGS = [
@@ -207,5 +255,5 @@
     {key:"alma",   name:"Segunda alma", desc:"Revives una vez por partida", max:1, cost:[1500]}
   ];
 
-  V.RUN_LENGTH = 1200;
+  V.RUN_LENGTH = 1800;   // treinta minutos, como el original
 })();

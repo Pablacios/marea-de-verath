@@ -18,7 +18,7 @@
 
   /* ---------------- 1. Látigo: barre en horizontal, atraviesa ---------------- */
   W.latigo = {
-    name:"Látigo", glyph:"⌒", color:"#C2263A", spr:null,
+    name:"Látigo", glyph:"⌒", ico:"latigo", color:"#C2263A", spr:null,
     desc:"Barre en horizontal hacia donde miras. Atraviesa a todo el que toca.",
     base:{cd:1.20, dmg:22, count:1, area:1, range:104},
     ups:[U("+1 barrido al lado contrario",{count:1}), U("+10 de daño",{dmg:10}),
@@ -42,7 +42,7 @@
 
   /* ---------------- 2. Varita rúnica: apunta al más cercano ---------------- */
   W.varita = {
-    name:"Varita Rúnica", glyph:"✦", color:"#8FA8FF", spr:"b_runa",
+    name:"Varita Rúnica", glyph:"✦", ico:"varita", color:"#8FA8FF", spr:"b_runa",
     desc:"Dispara sola al enemigo más cercano. Nunca falla el rumbo.",
     base:{cd:1.10, dmg:16, count:1, speed:340, pierce:1, area:1},
     ups:[U("+1 runa",{count:1}), U("+7 de daño",{dmg:7}), U("−0,12 s de recarga",{cd:-.12}),
@@ -61,7 +61,7 @@
 
   /* ---------------- 3. Daga: rápida, hacia donde caminas ---------------- */
   W.daga = {
-    name:"Daga", glyph:"⋔", color:"#C9CEDC", spr:"b_daga",
+    name:"Daga", glyph:"⋔", ico:"daga", color:"#C9CEDC", spr:"b_daga",
     desc:"Sale disparada hacia donde caminas. Rápida y barata.",
     base:{cd:0.58, dmg:12, count:1, speed:460, pierce:1, area:1, spread:.12},
     ups:[U("+1 daga",{count:1}), U("+5 de daño",{dmg:5}), U("−0,08 s de recarga",{cd:-.08}),
@@ -80,7 +80,7 @@
 
   /* ---------------- 4. Hacha: vuela en arco, mucho daño y área ---------------- */
   W.hacha = {
-    name:"Hacha", glyph:"⌁", color:"#9AA0B0", spr:"b_hacha",
+    name:"Hacha", glyph:"⌁", ico:"hacha", color:"#9AA0B0", spr:"b_hacha",
     desc:"Sube en arco y cae. Daño alto y atraviesa hordas enteras.",
     base:{cd:1.60, dmg:40, count:1, speed:300, pierce:5, area:1},
     ups:[U("+1 hacha",{count:1}), U("+16 de daño",{dmg:16}), U("atraviesa 2 más",{pierce:2}),
@@ -97,7 +97,7 @@
 
   /* ---------------- 5. Cruz: bumerán al más cercano ---------------- */
   W.cruz = {
-    name:"Cruz", glyph:"✚", color:"#E5C34A", spr:"b_cruz",
+    name:"Cruz", glyph:"✚", ico:"cruz", color:"#E5C34A", spr:"b_cruz",
     desc:"Vuela hacia el enemigo más cercano y vuelve a tu mano.",
     base:{cd:1.40, dmg:20, count:1, speed:300, pierce:99, area:1},
     ups:[U("+1 cruz",{count:1}), U("+9 de daño",{dmg:9}), U("+25% de área",{area:.25}),
@@ -117,7 +117,7 @@
 
   /* ---------------- 6. Biblia: orbita alrededor ---------------- */
   W.biblia = {
-    name:"Biblia", glyph:"◈", color:"#C08BEF", spr:"b_biblia",
+    name:"Biblia", glyph:"◈", ico:"biblia", color:"#C08BEF", spr:"b_biblia",
     desc:"Tomos que giran a tu alrededor y trituran lo que rozan.",
     base:{cd:3.4, dmg:16, count:1, speed:2.4, area:1, radius:70, active:2.0},
     ups:[U("+1 tomo",{count:1}), U("+7 de daño",{dmg:7}), U("+0,6 s girando",{active:.6}),
@@ -151,7 +151,7 @@
 
   /* ---------------- 7. Vara de fuego: enemigo al azar, daño bestial ---------------- */
   W.varafuego = {
-    name:"Vara de Fuego", glyph:"❂", color:"#FF8A3C", spr:"b_fuego",
+    name:"Vara de Fuego", glyph:"❂", ico:"varafuego", color:"#FF8A3C", spr:"b_fuego",
     desc:"Escupe una bola de fuego a un enemigo al azar. Duele de verdad.",
     base:{cd:1.9, dmg:44, count:1, speed:260, pierce:1, area:1},
     ups:[U("+1 llama",{count:1}), U("+18 de daño",{dmg:18}), U("−0,25 s de recarga",{cd:-.25}),
@@ -171,7 +171,7 @@
 
   /* ---------------- 8. Ajo: halo de daño constante ---------------- */
   W.ajo = {
-    name:"Ajo Bendito", glyph:"◉", color:"#E5B95C", spr:null,
+    name:"Ajo Bendito", glyph:"◉", ico:"ajo", color:"#E5B95C", spr:null,
     desc:"Un halo hediondo que quema y empuja a todo el que se acerca.",
     base:{cd:0.80, dmg:11, area:1, radius:76},
     ups:[U("halo más amplio",{radius:14}), U("+5 de daño",{dmg:5}), U("−0,1 s entre golpes",{cd:-.1}),
@@ -202,7 +202,7 @@
 
   /* ---------------- 9. Agua bendita: charcos que dañan ---------------- */
   W.agua = {
-    name:"Agua Bendita", glyph:"◍", color:"#7CC6FF", spr:null,
+    name:"Agua Bendita", glyph:"◍", ico:"agua", color:"#7CC6FF", spr:null,
     desc:"Frascos que estallan y dejan charcos ardiendo en el suelo.",
     base:{cd:2.6, dmg:12, count:1, area:1, radius:44, life:3.4},
     ups:[U("+1 frasco",{count:1}), U("+5 de daño",{dmg:5}), U("+1 s de duración",{life:1}),
@@ -221,7 +221,7 @@
 
   /* ---------------- 10. Trazarunas: atraviesa y rebota ---------------- */
   W.trazarunas = {
-    name:"Trazarunas", glyph:"◇", color:"#46E0C8", spr:"b_runatrace",
+    name:"Trazarunas", glyph:"◇", ico:"trazarunas", color:"#46E0C8", spr:"b_runatrace",
     desc:"Atraviesa cuerpos y rebota en los bordes hasta agotarse.",
     base:{cd:3.0, dmg:20, count:1, speed:300, pierce:99, area:1, life:4.5},
     ups:[U("+1 traza",{count:1}), U("+9 de daño",{dmg:9}), U("+1,2 s de vuelo",{life:1.2}),
@@ -239,7 +239,7 @@
 
   /* ---------------- 11. Anillo de rayos: cae sobre enemigos al azar ---------------- */
   W.rayos = {
-    name:"Anillo de Rayos", glyph:"↯", color:"#FFE066", spr:null,
+    name:"Anillo de Rayos", glyph:"↯", ico:"rayos", color:"#FFE066", spr:null,
     desc:"Rayos que caen sobre enemigos al azar en toda la pantalla.",
     base:{cd:2.6, dmg:38, count:2, area:1, radius:36},
     ups:[U("+1 rayo",{count:1}), U("+14 de daño",{dmg:14}), U("−0,3 s de recarga",{cd:-.3}),
@@ -262,7 +262,7 @@
 
   /* ---------------- 12. Pentagrama: borra la pantalla ---------------- */
   W.pentagrama = {
-    name:"Pentagrama", glyph:"☆", color:"#C08BEF", spr:null,
+    name:"Pentagrama", glyph:"☆", ico:"pentagrama", color:"#C08BEF", spr:null,
     desc:"Borra de la existencia todo lo que hay en pantalla. Recarga eterna.",
     base:{cd:30, dmg:9999, count:1, area:1},
     ups:[U("−4 s de recarga",{cd:-4}), U("−3 s de recarga",{cd:-3}), U("−3 s de recarga",{cd:-3}),
@@ -304,7 +304,7 @@
     }
   }
   W.peachone = {
-    name:"Ala Blanca", glyph:"➶", color:"#E8EEFF", spr:"b_pajaro",
+    name:"Ala Blanca", glyph:"➶", ico:"peachone", color:"#E8EEFF", spr:"b_pajaro",
     desc:"Un ave de luz que ronda y descarga sobre los que te siguen.",
     base:{cd:1.6, dmg:16, count:1, area:1},
     ups:[U("+8 de daño",{dmg:8}), U("+1 ave",{count:1}), U("+20% de área",{area:.2}),
@@ -313,7 +313,7 @@
     persistent:true, tick:birdTick, draw:birdDraw
   };
   W.ebano = {
-    name:"Ala de Ébano", glyph:"➷", color:"#3A3A4E", spr:"b_pajaro_neg", dark:true,
+    name:"Ala de Ébano", glyph:"➷", ico:"ebano", color:"#3A3A4E", spr:"b_pajaro_neg", dark:true,
     desc:"Su gemela negra, siempre en el lado opuesto.",
     base:{cd:1.6, dmg:16, count:1, area:1},
     ups:[U("+8 de daño",{dmg:8}), U("+1 ave",{count:1}), U("+20% de área",{area:.2}),
@@ -324,7 +324,7 @@
 
   /* ---------------- 15. Lanceta: congela en línea ---------------- */
   W.lanceta = {
-    name:"Lanceta del Reloj", glyph:"⊣", color:"#7CC6FF", spr:null,
+    name:"Lanceta del Reloj", glyph:"⊣", ico:"lanceta", color:"#7CC6FF", spr:null,
     desc:"Lanza una línea que detiene el tiempo de todo lo que atraviesa.",
     base:{cd:4.0, dmg:0, count:1, area:1, freeze:2.2, range:300},
     ups:[U("+1 lanzamiento",{count:1}), U("+0,6 s congelado",{freeze:.6}), U("−0,6 s de recarga",{cd:-.6}),
@@ -345,7 +345,7 @@
 
   /* ---------------- 16. Laurel: escudo que absorbe ---------------- */
   W.laurel = {
-    name:"Laurel", glyph:"◯", color:"#5FBF6A", spr:null,
+    name:"Laurel", glyph:"◯", ico:"laurel", color:"#5FBF6A", spr:null,
     desc:"Una corona que absorbe los golpes que iban a matarte.",
     base:{cd:8.0, dmg:0, count:1, area:1, charges:1},
     ups:[U("+1 carga",{charges:1}), U("−1,2 s de recarga",{cd:-1.2}), U("+1 carga",{charges:1}),
@@ -375,7 +375,7 @@
 
   /* ---------------- 17. Canción: ondas verticales ---------------- */
   W.cancion = {
-    name:"Canción de Maná", glyph:"≋", color:"#C08BEF", spr:null,
+    name:"Canción de Maná", glyph:"≋", ico:"cancion", color:"#C08BEF", spr:null,
     desc:"Ondas que suben y bajan barriendo columnas enteras.",
     base:{cd:3.4, dmg:26, count:1, area:1, life:1.6, width:56},
     ups:[U("+11 de daño",{dmg:11}), U("+1 onda",{count:1}), U("+0,5 s de duración",{life:.5}),
@@ -394,7 +394,7 @@
 
   /* ---------------- 18. Gatos: proyectiles erráticos ---------------- */
   W.gatos = {
-    name:"Gatos Amargos", glyph:"∿", color:"#D8B070", spr:"b_gato",
+    name:"Gatos Amargos", glyph:"∿", ico:"gatos", color:"#D8B070", spr:"b_gato",
     desc:"Se van por su cuenta, hacen lo que quieren y muerden a quien pillan.",
     base:{cd:3.2, dmg:22, count:1, speed:150, pierce:99, area:1, life:6},
     ups:[U("+1 gato",{count:1}), U("+9 de daño",{dmg:9}), U("+2 s de merodeo",{life:2}),
@@ -412,7 +412,7 @@
 
   /* ---------------- 19/20. Las dos pistolas ---------------- */
   W.pistola = {
-    name:"Pistola de Cebo", glyph:"⌐", color:"#FFE066", spr:"b_bala",
+    name:"Pistola de Cebo", glyph:"⌐", ico:"pistola", color:"#FFE066", spr:"b_bala",
     desc:"Cuatro tiros en cruz, sin apuntar a nada en concreto.",
     base:{cd:1.5, dmg:14, count:1, speed:420, pierce:1, area:1},
     ups:[U("+6 de daño",{dmg:6}), U("+1 ronda",{count:1}), U("−0,2 s de recarga",{cd:-.2}),
@@ -426,7 +426,7 @@
     }
   };
   W.escopeta = {
-    name:"Trabuco del Gorrión", glyph:"⌙", color:"#FFD36B", spr:"b_bala",
+    name:"Trabuco del Gorrión", glyph:"⌙", ico:"escopeta", color:"#FFD36B", spr:"b_bala",
     desc:"Cuatro tiros en aspa. Junto a la pistola, algo peor nace.",
     base:{cd:1.5, dmg:14, count:1, speed:420, pierce:1, area:1},
     ups:[U("+6 de daño",{dmg:6}), U("+1 ronda",{count:1}), U("−0,2 s de recarga",{cd:-.2}),

@@ -6,7 +6,7 @@
 
   var canvas, ctx, screenEl;
   var players = [], foes = [], bullets = [], areas = [], gems = [], drops = [], parts = [], floats = [];
-  var runT = 0, kills = 0, runGold = 0, eventIdx = 0, streamT = [];
+  var runT = 0, kills = 0, runGold = 0;
   var stage = null, stageKey = "distrito";
   var cam = {x:0,y:0}, zoom = 1, baseZoom = 1, shake = 0;
   var msgText = "", msgTime = 0;
@@ -99,6 +99,15 @@
     st.magnet    *= 1 + (m.iman||0)*0.25;
     st.greed     *= 1 + (m.codicia||0)*0.15;
     st.luck      *= 1 + (m.suerte||0)*0.10;
+    /* topes del original: daño x10, área x10, velocidad x5, duración x5,
+       recarga mínima al 10%, armadura 50, proyectiles extra 10 */
+    st.might    = Math.min(st.might, 10);
+    st.area     = Math.min(st.area, 10);
+    st.speed    = Math.min(st.speed, 5);
+    st.duration = Math.min(st.duration, 5);
+    st.cooldown = Math.max(st.cooldown, 0.10);
+    st.armor    = Math.min(st.armor, 50);
+    st.amount   = Math.min(st.amount, 10);
     p.st = st;
     var ratio = p.maxhp ? p.hp/p.maxhp : 1;
     p.maxhp = h.hp * st.maxHealth;
@@ -161,11 +170,12 @@
     return countKills ? killed : 0;
   }
   function nearest(x,y,range,skip){
+    // las luces no cuentan como objetivo de las armas que apuntan solas
     var best=null, bd=range*range;
     queryNear(x,y,range,scratch);
     for(var i=0;i<scratch.length;i++){
       var f=foes[scratch[i]];
-      if(!f||f.dead||f.def.reaper||f===skip) continue;
+      if(!f||f.dead||f.def.reaper||f.def.light||f===skip) continue;
       var d=(f.x-x)*(f.x-x)+(f.y-y)*(f.y-y);
       if(d<bd){ bd=d; best=f; }
     }
@@ -175,7 +185,7 @@
     var v=view(), tries=0;
     while(tries++ < 12){
       var f = foes[ri(0, foes.length-1)];
-      if(!f || f.dead || f.def.reaper) continue;
+      if(!f || f.dead || f.def.reaper || f.def.light) continue;
       if(Math.abs(f.x-v.x) < v.hw && Math.abs(f.y-v.y) < v.hh) return f;
     }
     return nearest(p.x, p.y, range||500);
@@ -200,15 +210,35 @@
 
   /* ---------------- enemigos ---------------- */
   var nidSeq = 0;
-  function spawnFoe(type,x,y){
+  function isTrash(f){ var d=f.def; return !d.light && !d.elite && !d.reaper; }
+  function trashCount(){
+    var n=0;
+    for(var i=0;i<foes.length;i++) if(!foes[i].dead && isTrash(foes[i])) n++;
+    return n;
+  }
+  function lightCount(){
+    var n=0;
+    for(var i=0;i<foes.length;i++) if(!foes[i].dead && foes[i].def.light) n++;
+    return n;
+  }
+  /* mul es la fuerza del escalón de ese minuto; como en el original, un
+     enemigo no se hace más fuerte con el reloj: lo que cambia es qué
+     enemigo sale. La maldición sí multiplica vida y velocidad. */
+  function spawnFoe(type,x,y,mul){
     var def = V.FOES[type];
     if(!def) return null;
-    if(foes.length > 950 && !def.elite && !def.reaper) return null;
-    var grow = def.reaper ? 1 : (1 + runT/440);
+    var boss = def.elite || def.reaper;
+    if(!boss && !def.light && trashCount() >= V.FOE_CAP) return null;
+    if(foes.length > 1200 && !boss) return null;
+    var st = players.length ? players[0].st : null;
+    var curse = st ? (st.curse||1) : 1;
+    var m = (mul || 1) * (def.reaper ? 1 : curse);
+    var spd = (stage && stage.mods ? stage.mods.speed : 1) || 1;
+    var hp = def.hp * (def.reaper ? 1 : m);
     var f = {x:x,y:y,type:type,def:def,r:def.r,
-      hp:def.hp*grow, maxhp:def.hp*grow,
-      speed:def.speed*(def.reaper?1:(1+runT/2800)),
-      dmg:def.dmg*(def.reaper?1:(1+runT/900)),
+      hp:hp, maxhp:hp,
+      speed:def.speed * (def.reaper ? 1 : spd*Math.min(curse,2)),
+      dmg:def.dmg * (def.reaper ? 1 : (mul||1)),
       hit:0, kx:0, ky:0, freeze:0, slow:0, dead:false, tags:null,
       frame:ri(0,3), wob:rf(0,6.283), nid:(++nidSeq)&65535};
     foes.push(f);
@@ -227,20 +257,52 @@
   function kill(idx, owner){
     var f = foes[idx];
     if(f.dead) return;
-    f.dead = true; kills++;
+    f.dead = true;
+    var st = owner ? owner.st : {greed:1, luck:1, curse:1};
+
+    if(f.def.light){                       // una luz rota: monedas o un poder
+      burst(f.x, f.y, "#FFD36B", 14);
+      beep(880,.08,"square",.03);
+      if(Math.random() < 0.40*(st.luck||1)) drops.push({x:f.x,y:f.y,kind:pickPower(),v:1});
+      else {
+        var r = Math.random()*(st.luck||1);
+        var coin = r>0.96 ? 100 : (r>0.70 ? 10 : 1);
+        drops.push({x:f.x,y:f.y,kind:"oro",v:Math.round(coin*(st.greed||1))});
+      }
+      return;
+    }
+
+    kills++;
     if(owner) owner.kills++;
     burst(f.x, f.y, f.def.elite ? "#C2263A" : (stage ? stage.accent : "#8E1F2F"), f.def.elite?46:5);
-    var st = owner ? owner.st : {greed:1, luck:1, curse:1};
-    if(f.def.xp > 0) gems.push({x:f.x,y:f.y,v:f.def.xp*(st.curse||1),t:rf(0,6.28)});
+    if(f.def.xp > 0) dropGem(f.x, f.y, f.def.xp);
     if(Math.random() < f.def.gold*(st.luck||1))
       drops.push({x:f.x,y:f.y,kind:"oro",v:Math.round(rf(3,10)*(st.greed||1))});
     if(Math.random() < 0.010*(st.luck||1)) drops.push({x:f.x,y:f.y,kind:"carne",v:1});
     if(f.def.elite){
       drops.push({x:f.x,y:f.y,kind:"cofre",v:1});
-      drops.push({x:f.x+rf(-24,24),y:f.y+rf(-24,24),kind:"oro",v:Math.round(110*(st.greed||1))});
-      shake = 9; say("El elite ha caído. Ha soltado un cofre.");
+      shake = 9; say("El jefe ha caído. Ha soltado un cofre.");
       beep(170,.45,"sawtooth",.06);
     }
+  }
+  /* Tope de gemas en el suelo: por encima del límite, la experiencia ya no
+     crea gemas nuevas, se acumula en una sola gema roja. */
+  var overflowGem = null;
+  function dropGem(x,y,v){
+    if(gems.length >= V.GEM_CAP){
+      if(overflowGem && gems.indexOf(overflowGem) >= 0){ overflowGem.v += v; return; }
+      overflowGem = {x:x,y:y,v:v,t:rf(0,6.28)};
+      gems.push(overflowGem);
+      return;
+    }
+    gems.push({x:x,y:y,v:v,t:rf(0,6.28)});
+  }
+  function pickPower(){
+    var tot=0, i;
+    for(i=0;i<V.POWERUPS.length;i++) tot += V.POWERUPS[i].w;
+    var r = Math.random()*tot;
+    for(i=0;i<V.POWERUPS.length;i++){ r -= V.POWERUPS[i].w; if(r<=0) return V.POWERUPS[i].kind; }
+    return "carne";
   }
   G.spawnFoe = spawnFoe;
 
@@ -340,47 +402,131 @@
     var d = dist || (Math.max(canvas.width,canvas.height)/zoom)*.62;
     return {x:ref.x+Math.cos(a)*d, y:ref.y+Math.sin(a)*d};
   }
-  function waves(dt){
-    var curse = players.length ? (players[0].st.curse||1) : 1;
-    for(var i=0;i<V.STREAMS.length;i++){
-      var st = V.STREAMS[i];
-      if(runT < st.a || runT > st.b) continue;
-      streamT[i] -= dt*curse;
-      if(streamT[i] <= 0){
-        streamT[i] = st.every;
-        var type = stage.foes[st.foe];
-        for(var k=0;k<st.n;k++){ var pt = ringPoint(); spawnFoe(type, pt.x, pt.y); }
-      }
+  /* ---------------- objetos del suelo ----------------
+     Los mismos que en el original: rosario, llamas, reloj de arena,
+     llamada del vacío, festín y monedas. */
+  function takeDrop(p, dr){
+    var k = dr.kind;
+    if(k === "oro"){ runGold += dr.v; floatText(dr.x,dr.y,"+"+dr.v,"#E5B95C"); return; }
+    if(k === "carne"){
+      p.hp = Math.min(p.maxhp, p.hp + 30);
+      floatText(dr.x,dr.y,"+30","#C2263A"); beep(600,.12,"triangle",.05); return;
     }
-    while(eventIdx < V.EVENTS.length && runT >= V.EVENTS[eventIdx].t){
-      var ev = V.EVENTS[eventIdx++];
-      var ref = alive()[0] || cam;
-      var d = (Math.max(canvas.width,canvas.height)/zoom)*.6;
-      if(ev.kind === "ring"){
-        for(var r=0;r<ev.n;r++){
-          var a=(r/ev.n)*6.283;
-          spawnFoe(stage.foes[ev.foe], ref.x+Math.cos(a)*d, ref.y+Math.sin(a)*d);
-        }
-        say("¡Os rodean!"); shake = 6;
-      } else if(ev.kind === "wall"){
-        var side = ri(0,3);
-        for(var w2=0;w2<ev.n;w2++){
-          var off = (w2-ev.n/2)*34, x, y;
-          if(side<2){ x = side===0 ? ref.x-d : ref.x+d; y = ref.y+off; }
-          else { x = ref.x+off; y = side===2 ? ref.y-d : ref.y+d; }
-          spawnFoe(stage.foes[ev.foe], x, y);
-        }
-        say("Una muralla avanza hacia vosotros.");
-      } else if(ev.kind === "elite"){
-        var pt2 = ringPoint();
-        var el = spawnFoe("elite", pt2.x, pt2.y);
-        if(el){ el.hp *= 1+runT/720; el.maxhp = el.hp; }
+    if(k === "cofre"){ if(V.ui) V.ui.chest(p); return; }
+    if(k === "rosario"){
+      wipe(p, 99999, false);
+      say("El rosario limpia la calle."); shake = 12;
+      beep(140,.6,"sine",.07); return;
+    }
+    if(k === "reloj"){
+      for(var i=0;i<foes.length;i++) if(!foes[i].def.reaper) foes[i].freeze = Math.max(foes[i].freeze, 10);
+      say("El tiempo se detiene."); beep(320,.5,"sine",.05); return;
+    }
+    if(k === "vacio"){
+      for(var g=0;g<gems.length;g++){ gems[g].x = p.x; gems[g].y = p.y; }
+      say("Las gemas acuden solas."); beep(900,.3,"triangle",.05); return;
+    }
+    if(k === "llama"){
+      p.flame = 10; say("Arde todo a tu paso."); beep(200,.4,"sawtooth",.06); return;
+    }
+  }
+  function flameTick(p, dt){
+    if(!(p.flame > 0)) return;
+    p.flame -= dt;
+    p.flameT = (p.flameT||0) - dt;
+    if(p.flameT <= 0){
+      p.flameT = 0.28;
+      for(var i=0;i<3;i++){
+        var a = rf(0,6.283);
+        area({x:p.x+Math.cos(a)*54, y:p.y+Math.sin(a)*54, w:96*(p.st.area||1), h:96*(p.st.area||1),
+          kind:"pool", life:.3, color:"#FF8A3C", dmg:22*(p.st.might||1), owner:p});
+      }
+      beep(260,.06,"sawtooth",.02);
+    }
+  }
+
+  /* ---------------- oleadas, igual que en el original ----------------
+     Cada minuto manda: dice qué enemigos salen, cuántos debe haber vivos
+     como mínimo y cada cuánto se comprueba. Al comprobar, si faltan, se
+     generan hasta llenar el cupo. La maldición sube cupo y frecuencia.
+     Por encima del tope de vivos solo entran jefes y eventos. */
+  var waveMin = -1, spawnT = 0, lightT = 3;
+
+  function spawnRing(type, n, mul){
+    var ref = alive()[0] || cam;
+    var d = (Math.max(canvas.width,canvas.height)/zoom)*.60;
+    for(var i=0;i<n;i++){
+      var a2=(i/n)*6.283;
+      spawnFoe(type, ref.x+Math.cos(a2)*d, ref.y+Math.sin(a2)*d, mul);
+    }
+  }
+  function spawnWall(type, n, mul){
+    var ref = alive()[0] || cam;
+    var d = (Math.max(canvas.width,canvas.height)/zoom)*.60;
+    var side = ri(0,3);
+    for(var i=0;i<n;i++){
+      var off = (i-n/2)*34, x, y;
+      if(side<2){ x = side===0 ? ref.x-d : ref.x+d; y = ref.y+off; }
+      else { x = ref.x+off; y = side===2 ? ref.y-d : ref.y+d; }
+      spawnFoe(type, x, y, mul);
+    }
+  }
+  function spawnLight(){
+    // las luces aparecen alrededor, como el mobiliario rompible del mapa
+    var ref = alive()[0] || cam;
+    var d = (Math.max(canvas.width,canvas.height)/zoom)*.45;
+    var a2 = rf(0,6.283);
+    spawnFoe("luz", ref.x+Math.cos(a2)*d, ref.y+Math.sin(a2)*d, 1);
+  }
+
+  function waves(dt){
+    var st = players.length ? players[0].st : null;
+    var curse = st ? (st.curse||1) : 1;
+    var luck  = st ? (st.luck||1) : 1;
+    var m = Math.floor(runT/60);
+    var last = V.WAVES.length-1;
+    var w = V.WAVES[Math.min(m, last)];
+
+    if(m !== waveMin){                       // ha empezado un minuto nuevo
+      waveMin = m;
+      spawnT = 0;
+      if(w.boss){
+        var pt = ringPoint();
+        var el = spawnFoe("elite", pt.x, pt.y, w.mul);
+        if(el){ el.hp *= w.mul; el.maxhp = el.hp; }
         say("Algo enorme ha despertado."); shake = 10;
         beep(100,.7,"sawtooth",.07);
-      } else if(ev.kind === "reaper"){
-        if(V.ui) V.ui.endRun(true);
-        for(var rr=0;rr<3;rr++){ var pt3 = ringPoint(); spawnFoe("segadora", pt3.x, pt3.y); }
       }
+      if(w.ev){
+        var t = stage.foes[w.ev.f];
+        if(w.ev.kind === "ring"){ spawnRing(t, w.ev.n, w.mul); say("¡Os rodean!"); shake = 6; }
+        else { spawnWall(t, w.ev.n, w.mul); say("Una muralla avanza hacia vosotros."); }
+      }
+    }
+
+    spawnT -= dt*curse;
+    if(spawnT <= 0){
+      spawnT = w.every;
+      var quota = Math.round(w.min*curse) - trashCount();
+      for(var i=0;i<quota;i++){
+        var type = stage.foes[w.f[ri(0,w.f.length-1)]];
+        var pt2 = ringPoint();
+        if(!spawnFoe(type, pt2.x, pt2.y, w.mul)) break;   // tope alcanzado
+      }
+    }
+
+    var mods = (stage && stage.mods) || {lightChance:.10, maxLights:10};
+    lightT -= dt;
+    if(lightT <= 0){
+      lightT = 1.5;
+      if(lightCount() < mods.maxLights &&
+         Math.random() < Math.min(0.5, mods.lightChance*luck)) spawnLight();
+    }
+
+    if(runT >= V.RUN_LENGTH && !G.reaped){
+      G.reaped = true;
+      if(V.ui) V.ui.endRun(true);
+      for(var r=0;r<3;r++){ var pt3 = ringPoint(); spawnFoe("segadora", pt3.x, pt3.y); }
     }
   }
 
@@ -427,6 +573,7 @@
       }
       if(p.hurt>0) p.hurt-=dt;
       if(p.iframe>0) p.iframe-=dt;
+      flameTick(p, dt);
       if(p.st.recovery){
         p.regenAcc += dt;
         if(p.regenAcc >= 1){ p.regenAcc-=1; p.hp = Math.min(p.maxhp, p.hp + p.st.recovery); }
@@ -454,9 +601,7 @@
         var ddx=p.x-dr.x, ddy=p.y-dr.y, dl=Math.hypot(ddx,ddy)||.001;
         if(dl<mag*.9){ dr.x+=ddx/dl*280*dt; dr.y+=ddy/dl*280*dt; }
         if(dl<20){
-          if(dr.kind==="oro"){ runGold += dr.v; floatText(dr.x,dr.y,"+"+dr.v,"#E5B95C"); }
-          else if(dr.kind==="carne"){ p.hp=Math.min(p.maxhp,p.hp+p.maxhp*.25); floatText(dr.x,dr.y,"+vida","#C2263A"); beep(600,.12,"triangle",.05); }
-          else if(V.ui) V.ui.chest(p);
+          takeDrop(p, dr);
           drops.splice(d2,1);
         }
       }
@@ -485,13 +630,13 @@
     if(V.ui) V.ui.sync();
   }
 
+  /* Subir de nivel no cura: en el original solo abre el draft. */
   function gainXp(p, v){
     p.xp += v * (p.st.growth||1);
     var leveled = false;
     while(p.xp >= p.next){
       p.xp -= p.next; p.lvl++;
-      p.next = Math.round(5 + p.lvl*3.2 + Math.pow(p.lvl,1.44));
-      p.hp = Math.min(p.maxhp, p.hp+6);
+      p.next = V.xpNeed(p.lvl);
       if(V.ui) V.ui.queueDraft(p);
       leveled = true;
       beep(760,.12,"triangle",.05);
@@ -618,8 +763,13 @@
       var tgt = nearestPlayer(f.x,f.y);
       if(!tgt) continue;
       var dx=tgt.x-f.x, dy=tgt.y-f.y, dist=Math.hypot(dx,dy)||1;
-      if(dist > 1600 && !f.def.elite && !f.def.reaper){
-        var pt = ringPoint(); f.x=pt.x; f.y=pt.y; continue;
+      if(f.def.light){ if(dist > 1800) foes.splice(e,1); continue; }
+      if(f.def.elite || f.def.reaper){
+        // los jefes no se descartan nunca: si te alejas, reaparecen cerca
+        if(dist > 1600){ var ptb = ringPoint(); f.x=ptb.x; f.y=ptb.y; continue; }
+      } else if(dist > 1500){
+        // el resto desaparece al alejarte; el cupo del minuto los repone
+        foes.splice(e,1); continue;
       }
       var sp = f.speed * (f.slow>0?.45:1);
       if(f.def.erratic){ f.wob += dt*5; sp *= 1 + Math.sin(f.wob)*.35; }
@@ -705,13 +855,22 @@
     for(var g=0;g<gems.length;g++){
       var gem=gems[g];
       if(gem.x<left||gem.x>right||gem.y<top||gem.y>bot) continue;
-      var key = gem.v>=5?"i_gema3":(gem.v>=2?"i_gema2":"i_gema");
+      var tier = V.gemTier(gem.v);
+      var key = tier===2?"i_gema3":(tier===1?"i_gema2":"i_gema");
       var s=V.sprite(key,0);
       ctx.drawImage(s, Math.round(gem.x-s.width/2), Math.round(gem.y-s.height/2+Math.sin(gem.t*4)*2));
     }
     for(var d=0;d<drops.length;d++){
       var dr=drops[d];
-      var ks = dr.kind==="oro"?"i_oro":(dr.kind==="carne"?"i_carne":"i_cofre");
+      var ks = dr.kind==="oro"?"i_oro":(dr.kind==="carne"?"i_carne":(dr.kind==="cofre"?"i_cofre":null));
+      if(!ks){
+        var pc = V.iconCanvas ? V.iconCanvas("pu_"+dr.kind) : null;
+        if(pc){
+          ctx.drawImage(pc, Math.round(dr.x-pc.width/2), Math.round(dr.y-pc.height/2));
+          continue;
+        }
+        ks = "i_oro";
+      }
       var sp2=V.sprite(ks,0);
       ctx.drawImage(sp2, Math.round(dr.x-sp2.width/2), Math.round(dr.y-sp2.height/2));
     }
@@ -721,6 +880,18 @@
       var fo=foes[f2];
       if(fo.x<left||fo.x>right||fo.y<top||fo.y>bot) continue;
       var spr;
+      if(fo.def.light){
+        // las luces se dibujan con su icono y palpitan un poco
+        var lc = V.iconCanvas ? V.iconCanvas("pu_luz") : null;
+        if(lc){
+          ctx.globalAlpha = 0.13 + Math.sin(runT*3 + fo.wob)*0.05;
+          ctx.fillStyle = "#FFD36B";
+          ctx.fillRect(Math.round(fo.x)-18, Math.round(fo.y)-20, 36, 34);
+          ctx.globalAlpha = 1;
+          ctx.drawImage(lc, Math.round(fo.x-lc.width/2), Math.round(fo.y-lc.height+6));
+        }
+        continue;
+      }
       if(fo.hit>0) spr = V.spriteHit(fo.def.spr);
       else spr = V.sprite(fo.def.spr, (Math.floor(runT*7)+fo.frame)%4);
       if(!spr) continue;
@@ -909,13 +1080,19 @@
     stageKey = stgKey; stage = V.STAGES[stageKey];
     players.length=0; foes.length=0; bullets.length=0; areas.length=0;
     gems.length=0; drops.length=0; parts.length=0; floats.length=0;
-    runT=0; kills=0; runGold=0; eventIdx=0; streamT=[];
-    for(var s=0;s<V.STREAMS.length;s++) streamT.push(0);
+    runT=0; kills=0; runGold=0;
+    waveMin=-1; spawnT=0; lightT=3; overflowGem=null; G.reaped=false;
     for(var i=0;i<slots.length;i++)
       if(slots[i].joined) makePlayer(i, slots[i], {x:0,y:0});
     cam.x=0; cam.y=0; zoom=baseZoom;
     G.state.running=true; G.state.paused=false; G.state.demo=false;
-    say("Sobrevivid veinte minutos en " + stage.name + ".");
+    // tanda inicial del mapa, como el "starting spawns" del original
+    var n0 = (stage.mods && stage.mods.start) || 10;
+    for(var q=0;q<n0;q++){
+      var a0 = (q/n0)*6.283, d0 = 300;
+      spawnFoe(stage.foes[0], Math.cos(a0)*d0, Math.sin(a0)*d0, 1);
+    }
+    say("Sobrevivid treinta minutos en " + stage.name + ".");
   };
   G.joinMid = function(slotIdx, slot){
     var anchor = alive()[0] || cam;
@@ -932,6 +1109,9 @@
   G.addGold = function(n){ runGold += n; };
   G.kills = function(){ return kills; };
   G.time = function(){ return runT; };
+  /* adelantar el reloj de la cacería: lo usa la migración de anfitrión y
+     también sirve para probar minutos concretos sin esperar media hora */
+  G.setTime = function(t){ runT = t; waveMin = Math.floor(runT/60); };
   G.cam = cam;
 
   /* demo del menú: el páramo sigue vivo detrás */
@@ -970,8 +1150,8 @@
     if(V.world) V.world.reset();
     players.length=0; foes.length=0; bullets.length=0; areas.length=0;
     gems.length=0; drops.length=0; parts.length=0; floats.length=0;
-    runT=0; kills=0; runGold=0; eventIdx=0; streamT=[];
-    for(var s=0;s<V.STREAMS.length;s++) streamT.push(0);
+    runT=0; kills=0; runGold=0;
+    waveMin=-1; spawnT=0; lightT=3; overflowGem=null; G.reaped=false;
     for(var i=0;i<peers.length;i++){
       var p = makePlayer(i, {hero:V.net.heroOf(peers[i]), input:"kb1"}, {x:0,y:0});
       p.netPeer = peers[i];
@@ -1052,11 +1232,11 @@
     }
     gems.length = 0;
     for(i=0;i<R.gems.length;i++)
-      gems.push({x:R.gems[i].x, y:R.gems[i].y, v:R.gems[i].tier>=2?5:(R.gems[i].tier?2:1), t:runT});
+      gems.push({x:R.gems[i].x, y:R.gems[i].y, v:R.gems[i].tier>=2?12:(R.gems[i].tier?5:1), t:runT});
     drops.length = 0;
     for(i=0;i<R.drops.length;i++)
       drops.push({x:R.drops[i].x, y:R.drops[i].y,
-        kind:R.drops[i].kind===0?"oro":(R.drops[i].kind===1?"carne":"cofre")});
+        kind:(V.net && V.net.DROPK ? V.net.DROPK[R.drops[i].kind] : "oro") || "oro"});
     areas.length = 0;
     for(i=0;i<R.areas.length;i++){
       var a = R.areas[i];
@@ -1089,8 +1269,7 @@
     }
     bullets.length = 0; areas.length = 0;
     runT = R.runT; runGold = R.gold;
-    eventIdx = 0;
-    while(eventIdx < V.EVENTS.length && V.EVENTS[eventIdx].t <= runT) eventIdx++;
+    waveMin = Math.floor(runT/60);   // el nuevo anfitrión retoma el minuto en curso
     for(var i=0;i<players.length;i++){
       for(var j=0;j<R.players.length;j++)
         if(R.players[j].peer === players[i].netPeer){

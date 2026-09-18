@@ -53,6 +53,9 @@
 
   /* ---------------- el anfitrión empaqueta el mundo -------------------- */
   var LIM = {foes:150, bullets:64, gems:48, drops:20, areas:18};
+  /* orden fijo de los objetos del suelo: lo comparten el que empaqueta y
+     el que desempaqueta, así que no se puede reordenar a la ligera */
+  N.DROPK = ["oro","carne","cofre","rosario","llama","reloj","vacio"];
 
   function nearest(list, ox, oy, max){
     if(list.length <= max) return list;
@@ -114,13 +117,14 @@
     wr.u8(gs.length);
     for(var g=0;g<gs.length;g++){
       wr.i16(gs[g].x-ox); wr.i16(gs[g].y-oy);
-      wr.u8(gs[g].v>=5?2:(gs[g].v>=2?1:0));
+      wr.u8(V.gemTier(gs[g].v));
     }
     var ds = nearest(w.drops, ox, oy, LIM.drops);
     wr.u8(ds.length);
     for(var d=0;d<ds.length;d++){
       wr.i16(ds[d].x-ox); wr.i16(ds[d].y-oy);
-      wr.u8(ds[d].kind==="oro"?0:(ds[d].kind==="carne"?1:2));
+      var ki = N.DROPK.indexOf(ds[d].kind);
+      wr.u8(ki < 0 ? 0 : ki);
     }
     var as = nearest(w.areas, ox, oy, LIM.areas);
     wr.u8(as.length);
@@ -226,8 +230,8 @@
     var pingAt = 0, pingSeq = 0;
 
     function url(){
-      var proto = location.protocol === "https:" ? "wss:" : "ws:";
-      return proto + "//" + location.host + "/ws?sala=" + encodeURIComponent(code);
+      var base = N.serverBase();
+      return base + "/ws?sala=" + encodeURIComponent(code);
     }
     function send(obj){
       if(sock && sock.readyState === 1){ sock.send(JSON.stringify(obj)); return true; }
@@ -303,6 +307,38 @@
   /* ---------------- arranque ------------------------------------------- */
   function inClaude(){ return !!(window.claude && window.claude.use); }
 
+  /* Dónde vive el servidor de salas. Por defecto, el mismo sitio que sirve el
+     juego; pero se puede apuntar a otro, que es lo que permite tener el juego
+     en un hosting estático y el relé en un Worker aparte. Orden de prioridad:
+     variable global -> parámetro ?servidor= -> lo guardado -> mismo origen. */
+  function normalize(u){
+    u = String(u||"").trim().replace(/\/+$/,"");
+    if(!u) return "";
+    u = u.replace(/^https:/,"wss:").replace(/^http:/,"ws:");
+    if(!/^wss?:\/\//.test(u)) u = (location.protocol === "https:" ? "wss://" : "ws://") + u;
+    return u;
+  }
+  N.serverBase = function(){
+    if(window.VERRATH_SERVIDOR) return normalize(window.VERRATH_SERVIDOR);
+    var m = /[?&]servidor=([^&#]+)/.exec(location.search);
+    if(m) return normalize(decodeURIComponent(m[1]));
+    try{
+      var saved = localStorage.getItem("verrath.servidor");
+      if(saved) return normalize(saved);
+    }catch(e){}
+    return (location.protocol === "https:" ? "wss://" : "ws://") + location.host;
+  };
+  N.setServer = function(u){
+    try{
+      if(u) localStorage.setItem("verrath.servidor", u);
+      else localStorage.removeItem("verrath.servidor");
+    }catch(e){}
+    if(N.transport === "ws") N.init();
+  };
+  N.serverLabel = function(){
+    return N.serverBase().replace(/^wss?:\/\//,"");
+  };
+
   N.roomCodeFromUrl = function(){
     var h = (location.hash || "").replace("#","").toUpperCase();
     return /^[A-Z0-9]{4,8}$/.test(h) ? h : null;
@@ -376,9 +412,13 @@
     return true;
   };
   N.shareUrl = function(){
-    return N.transport === "ws"
-      ? (location.origin + location.pathname + "#" + (N.code||""))
-      : location.href;
+    if(N.transport !== "ws") return location.href;
+    var base = location.origin + location.pathname;
+    // si el relé vive en otro sitio, el enlace se lo lleva puesto
+    var mine = (location.protocol === "https:" ? "wss://" : "ws://") + location.host;
+    var srv = N.serverBase();
+    if(srv && srv !== mine) base += "?servidor=" + encodeURIComponent(srv);
+    return base + "#" + (N.code||"");
   };
 
   N.retry = function(){

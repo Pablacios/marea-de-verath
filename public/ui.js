@@ -123,12 +123,14 @@
       var p=ps[i], h=V.HEROES[p.hero], kit="";
       for(var w=0;w<p.weapons.length;w++){
         var d=p.weapons[w].def;
-        kit += '<i style="--k:'+d.color+'" title="'+d.name+'">'+d.glyph+
+        kit += '<i style="--k:'+d.color+'" title="'+d.name+'">'+
+               V.iconHtml(d.ico, "icn sm", d.evo)+
                '<b>'+(d.evo?"★":p.weapons[w].lvl)+'</b></i>';
       }
       for(var k in p.passives){
         var q=V.PASSIVES[k];
-        kit += '<i style="--k:'+q.color+';opacity:.8" title="'+q.name+'">'+q.glyph+'<b>'+p.passives[k]+'</b></i>';
+        kit += '<i style="--k:'+q.color+';opacity:.8" title="'+q.name+'">'+
+               V.iconHtml(q.ico, "icn sm")+'<b>'+p.passives[k]+'</b></i>';
       }
       var c=document.createElement("div");
       c.className="pcard"+(p.down?" down":"");
@@ -175,29 +177,49 @@
       var b = G.ownedWeapon(p, rule.with);
       if(!b || b.lvl < 8) return false;
     }
-    if(rule.passive && (p.passives[rule.passive]||0) < 3) return false;
+    // el original exige el pasivo al máximo, no a un nivel intermedio
+    if(rule.passive){
+      var need = V.PASSIVES[rule.passive] ? V.PASSIVES[rule.passive].max : 5;
+      if((p.passives[rule.passive]||0) < need) return false;
+    }
     return !G.ownedWeapon(p, rule.to);
   }
+  /* Draft del original: tres cartas, y una cuarta con probabilidad
+     1 − 1/suerte. No se ofrecen objetos nuevos si ya tienes seis armas o
+     seis pasivos, ni nada que esté al máximo. La suerte también inclina la
+     balanza hacia lo que ya llevas, para poder subirlo. Las evoluciones no
+     salen aquí: solo llegan por cofre. */
   function buildOptions(p){
-    var pool=[];
-    for(var e=0;e<V.EVO_RULES.length;e++)
-      if(evoReady(p, V.EVO_RULES[e])) pool.push({type:"evo", rule:V.EVO_RULES[e]});
-    var mixed=[];
-    for(var i=0;i<V.WEAPON_KEYS.length;i++){
-      var k=V.WEAPON_KEYS[i], ow=G.ownedWeapon(p,k);
-      if(ow){ if(ow.lvl<8 && !ow.def.evo) mixed.push({type:"weapon",key:k,lvl:ow.lvl+1}); }
-      else if(p.weapons.length<6) mixed.push({type:"weapon",key:k,lvl:1});
+    var luck = p.st.luck || 1;
+    var owned = [], fresh = [], i;
+
+    for(i=0;i<V.WEAPON_KEYS.length;i++){
+      var k = V.WEAPON_KEYS[i], ow = G.ownedWeapon(p,k);
+      if(ow){ if(ow.lvl < 8 && !ow.def.evo) owned.push({type:"weapon",key:k,lvl:ow.lvl+1}); }
+      else if(p.weapons.length < 6) fresh.push({type:"weapon",key:k,lvl:1});
     }
-    for(var j=0;j<V.PASSIVE_KEYS.length;j++){
-      var pk=V.PASSIVE_KEYS[j], cur=p.passives[pk]||0;
+    var nPas = Object.keys(p.passives).length;
+    for(i=0;i<V.PASSIVE_KEYS.length;i++){
+      var pk = V.PASSIVE_KEYS[i], cur = p.passives[pk]||0;
       if(cur >= V.PASSIVES[pk].max) continue;
-      if(cur===0 && Object.keys(p.passives).length>=6) continue;
-      mixed.push({type:"passive",key:pk,lvl:cur+1});
+      if(cur > 0) owned.push({type:"passive",key:pk,lvl:cur+1});
+      else if(nPas < 6) fresh.push({type:"passive",key:pk,lvl:1});
     }
-    for(var s=mixed.length-1;s>0;s--){ var t=ri(0,s), tmp=mixed[s]; mixed[s]=mixed[t]; mixed[t]=tmp; }
-    pool=pool.concat(mixed);
-    if(!pool.length) pool=[{type:"heal"},{type:"gold"},{type:"heal"}];
-    return pool.slice(0,3);
+    shuffle(owned); shuffle(fresh);
+
+    var n = 3 + ((Math.random() < 1 - 1/luck) ? 1 : 0);
+    var pOwned = Math.min(0.85, 0.5*luck);
+    var pool = [];
+    while(pool.length < n && (owned.length || fresh.length)){
+      var takeOwned = owned.length && (!fresh.length || Math.random() < pOwned);
+      pool.push(takeOwned ? owned.shift() : fresh.shift());
+    }
+    // arsenal lleno y todo al máximo: oro o comida, como en el original
+    if(!pool.length) pool = [{type:"gold"},{type:"heal"},{type:"gold"}];
+    return pool;
+  }
+  function shuffle(a){
+    for(var i=a.length-1;i>0;i--){ var j=ri(0,i), t=a[i]; a[i]=a[j]; a[j]=t; }
   }
   function openDraft(){
     if(!draftQueue.length){ G.state.drafting=false; hide("draft"); lastT=performance.now(); return; }
@@ -224,21 +246,21 @@
     if(o.type==="evo"){
       var d=V.EVOLVED[o.rule.to];
       var need = o.rule.with ? (V.WEAPONS[o.rule.from].name+" + "+V.WEAPONS[o.rule.with].name) : V.WEAPONS[o.rule.from].name;
-      return {n:d.name, g:d.glyph, c:d.color, l:o.rule.with?"Unión":"Evolución",
+      return {n:d.name, ico:d.ico, c:d.color, l:o.rule.with?"Unión":"Evolución",
         gain:"Sustituye a "+need, t:d.desc, evo:true};
     }
     if(o.type==="weapon"){
       var w=V.WEAPONS[o.key];
-      return {n:w.name, g:w.glyph, c:w.color, l:o.lvl===1?"Arma nueva":"Nivel "+o.lvl,
+      return {n:w.name, ico:w.ico, c:w.color, l:o.lvl===1?"Arma nueva":"Nivel "+o.lvl,
         gain:o.lvl===1?"Se une a tu arsenal":(w.ups[o.lvl-2]?w.ups[o.lvl-2].text:"+ poder"), t:w.desc};
     }
     if(o.type==="passive"){
       var q=V.PASSIVES[o.key];
-      return {n:q.name, g:q.glyph, c:q.color, l:o.lvl===1?"Pasivo nuevo":"Nivel "+o.lvl,
+      return {n:q.name, ico:q.ico, c:q.color, l:o.lvl===1?"Pasivo nuevo":"Nivel "+o.lvl,
         gain:q.text, t:"Mejora a todas tus armas a la vez."};
     }
-    if(o.type==="heal") return {n:"Festín", g:"♥", c:"#C2263A", l:"Cura", gain:"+40% de vida", t:"Ya no queda nada que aprender."};
-    return {n:"Bolsa de oro", g:"✧", c:"#E5B95C", l:"Tesoro", gain:"+150 de oro", t:"Para el Santuario."};
+    if(o.type==="heal") return {n:"Festín", ico:"d_cura", c:"#C2263A", l:"Cura", gain:"+40% de vida", t:"Ya no queda nada que aprender."};
+    return {n:"Bolsa de oro", ico:"d_oro", c:"#E5B95C", l:"Tesoro", gain:"+150 de oro", t:"Para el Santuario."};
   }
   function renderDraft(){
     var wrap=$("draftCards");
@@ -250,7 +272,8 @@
         el.type="button";
         el.className="card"+(idx===draftIdx?" on":"")+(info.evo?" evo":"");
         el.style.setProperty("--c", info.c);
-        el.innerHTML='<div class="ic">'+info.g+'</div><div class="lvl">'+info.l+'</div>'+
+        el.innerHTML='<div class="ic">'+V.iconHtml(info.ico,"icn",info.evo)+'</div>'+
+          '<div class="lvl">'+info.l+'</div>'+
           '<h3>'+info.n+'</h3><div class="gain">'+info.gain+'</div><div class="txt">'+info.t+'</div>';
         el.addEventListener("click", function(){ pick(idx); });
         wrap.appendChild(el);
@@ -283,7 +306,7 @@
     } else if(o.type==="passive"){
       G.addPassive(p,o.key);
     } else if(o.type==="heal"){
-      p.hp=Math.min(p.maxhp,p.hp+p.maxhp*.4);
+      p.hp=Math.min(p.maxhp,p.hp+30);
     } else G.addGold(150);
     draftQueue.shift();
     U.party();
@@ -333,25 +356,50 @@
     confirmPrev=ok;
   }
 
+  /* Cofres, con las tiradas del original: primero cinco objetos, luego
+     tres, luego uno; la suerte multiplica cada tirada. Las evoluciones
+     solo salen de aquí y solo a partir del minuto diez; un cofre normal
+     desata una, y el de cinco puede desatar dos. */
   U.chest = function(p){
-    var cand=[];
-    for(var i=0;i<p.weapons.length;i++)
-      if(p.weapons[i].lvl<8 && !p.weapons[i].def.evo) cand.push(p.weapons[i]);
-    // con suerte alta, el cofre puede dar una evolución directa
-    for(var e=0;e<V.EVO_RULES.length;e++){
-      var r=V.EVO_RULES[e];
-      if(evoReady(p,r) && Math.random() < .5*(p.st.luck||1)){
-        G.addWeapon(p, r.to, r.from, r.with);
-        G.say("¡Cofre: "+V.EVOLVED[r.to].name+"!");
-        U.party();
-        return;
+    var luck = p.st.luck || 1, C = V.CHEST, tier;
+    if(Math.random() < C.five.p*luck)       tier = C.five;
+    else if(Math.random() < C.three.p*luck) tier = C.three;
+    else                                    tier = C.one;
+
+    var gold = Math.round(ri(tier.gold[0], tier.gold[1]) * (p.st.greed||1));
+    G.addGold(gold);
+
+    var evos = 0, maxEvo = tier.n >= 5 ? 2 : 1, dicho = [], i, e;
+    for(i=0;i<tier.n;i++){
+      var hecho = false;
+      if(evos < maxEvo && G.time() >= V.EVO_FROM){
+        for(e=0;e<V.EVO_RULES.length;e++){
+          var r = V.EVO_RULES[e];
+          if(!evoReady(p,r)) continue;
+          G.addWeapon(p, r.to, r.from, r.with);
+          V.game.recalc(p);
+          evos++; hecho = true;
+          dicho.push("¡" + V.EVOLVED[r.to].name + "!");
+          break;
+        }
       }
+      if(hecho) continue;
+
+      var cand = [], w;
+      for(e=0;e<p.weapons.length;e++){
+        w = p.weapons[e];
+        if(w.lvl < 8 && !w.def.evo) cand.push({w:w});
+      }
+      for(var k in p.passives)
+        if(p.passives[k] < V.PASSIVES[k].max) cand.push({q:k});
+      if(!cand.length){ G.addGold(Math.round(100*(p.st.greed||1))); continue; }
+
+      var c = cand[ri(0,cand.length-1)];
+      if(c.w){ c.w.lvl++; dicho.push(c.w.def.name + " nv " + c.w.lvl); }
+      else { G.addPassive(p, c.q); dicho.push(V.PASSIVES[c.q].name + " nv " + p.passives[c.q]); }
     }
-    if(cand.length){
-      var w=cand[ri(0,cand.length-1)];
-      w.lvl++;
-      G.say("Cofre: "+w.def.name+" sube a nivel "+w.lvl+".");
-    } else { G.addGold(220); G.say("Cofre: +220 de oro."); }
+
+    G.say("Cofre de " + tier.n + ": " + (dicho.join(" · ") || "solo oro") + " · +" + gold + " de oro");
     U.party();
   };
 
@@ -362,7 +410,7 @@
       V.net.emitCtl({k:"end", won:!!won, gold:G.runGold()});
     bank += (typeof goldOverride === "number") ? goldOverride : G.runGold();
     saveMeta();
-    $("endEyebrow").textContent = won ? "20:00" : "Fin de la partida";
+    $("endEyebrow").textContent = won ? "30:00" : "Fin de la partida";
     $("endTitle").textContent = won
       ? "Habéis sobrevivido a la noche"
       : (G.players.length>1 ? "La marea os cubrió" : "La marea te cubrió");
@@ -448,7 +496,7 @@
         V.HERO_KEYS.forEach(function(hk){
           picks+='<button type="button" class="pick'+(s.hero===hk?" sel":"")+
             '" data-h="'+hk+'" style="--pc:'+V.HEROES[hk].color+'" title="'+V.HEROES[hk].name+'">'+
-            V.HEROES[hk].glyph+'</button>';
+            V.heroIconHtml(hk, "icn")+'</button>';
         });
         el.innerHTML =
           '<div class="top"><span class="pn">Jugador '+(idx+1)+'</span>'+
@@ -586,7 +634,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v8";
+  var BUILD = "v11";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;
@@ -602,6 +650,7 @@
       if(!cbox.hidden){
         var inp = $("codeInput");
         if(document.activeElement !== inp) inp.value = N.code || "";
+        $("srvLabel").textContent = N.serverLabel();
       }
     }
     if(!N || !N.ready){ st.textContent = "Buscando la sala…"; return; }
@@ -700,6 +749,14 @@
       if(!V.net.setCode($("codeInput").value)) G.say("El código son 4 letras o números.");
     });
     $("codeNew").addEventListener("click", function(){ V.net.setCode(V.net.newCode()); });
+    $("srvEdit").addEventListener("click", function(){
+      var actual = V.net.serverLabel();
+      var nuevo = prompt("Dirección del servidor de salas\n\n" +
+        "Déjalo vacío para usar el mismo sitio que sirve el juego.", actual);
+      if(nuevo === null) return;
+      V.net.setServer(nuevo.trim());
+      renderRoom();
+    });
     $("codeCopy").addEventListener("click", function(){
       var u = V.net.shareUrl();
       try{
