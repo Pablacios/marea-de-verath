@@ -977,7 +977,7 @@
       var r = V.RESOLUCIONES[i];
       if(r.w && r.h){
         screenEl.style.aspectRatio = r.w + " / " + r.h;
-        screenEl.style.maxWidth = "calc((100dvh - var(--fuera)) * " + (r.w/r.h).toFixed(4) + ")";
+        screenEl.style.maxWidth = "calc((100vh - 210px) * " + (r.w/r.h).toFixed(4) + ")";
       } else {
         screenEl.style.aspectRatio = "";
         screenEl.style.maxWidth = "";
@@ -1097,7 +1097,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v20";
+  var BUILD = "v19";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;

@@ -15,13 +15,13 @@
   [hidden]{display:none!important}
   body{
     background:radial-gradient(1100px 700px at 50% -12%, #21132A 0%, transparent 62%), var(--void);
-    color:var(--bone); font-family:var(--body); min-height:100%; margin:0;
+    color:var(--bone); font-family:var(--body); min-height:100%;
   }
   img{image-rendering:pixelated}
   /* La página se estira con la pantalla: en un monitor grande el juego
      ocupa lo que le dejen, no una caja fija en medio. */
-  .wrap{max-width:min(2800px, 97vw);margin:0 auto;padding-inline:16px;padding-block:12px 14px;
-    display:flex;flex-direction:column;gap:8px}
+  .wrap{max-width:min(1560px, 97vw);margin:0 auto;padding-inline:16px;padding-block:16px 36px;
+    display:flex;flex-direction:column;gap:12px}
   .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
   .brand h1{font-family:var(--display);font-weight:800;margin:0;
     font-size:clamp(22px,4.2vw,34px);letter-spacing:.06em;text-wrap:balance;
@@ -39,26 +39,19 @@
   .screen:fullscreen{max-width:none;width:100vw;height:100vh;aspect-ratio:auto;border:0;border-radius:0}
   .screen:fullscreen canvas{width:100%;height:100%}
 
-  /* Cuánto alto se lleva todo lo que no es el lienzo: cabecera, barra de
-     cifras, leyenda plegada y márgenes. El recuadro se queda con el resto,
-     así que en un monitor ancho crece hasta llenar la ventana. */
-  :root{ --fuera:200px }
-  /* Con la partida en marcha aparece la barra de jugadores: el lienzo le
-     cede ese alto para que la página siga sin rodar. */
-  body:has(#party:not(:empty)){ --fuera:292px }
   .screen{position:relative;aspect-ratio:16/10;width:100%;margin-inline:auto;
     /* el alto manda: el lienzo nunca se sale de la ventana */
-    max-width:calc((100dvh - var(--fuera)) * 1.6);background:#000;
+    max-width:calc((100vh - 210px) * 1.6);background:#000;
     border:1px solid var(--edge);border-radius:4px;overflow:hidden;touch-action:none;
     box-shadow:0 0 0 1px rgba(0,0,0,.6),0 24px 60px rgba(0,0,0,.6),inset 0 0 90px rgba(0,0,0,.85)}
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
 
   .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:8px;padding:12px 14px;text-align:center;overflow:auto;
+    justify-content:center;gap:9px;padding:14px;text-align:center;overflow:auto;
     background:linear-gradient(180deg,rgba(7,6,14,.95),rgba(7,6,14,.985))}
   .overlay h2{font-family:var(--display);font-weight:800;margin:0;
     font-size:clamp(16px,3vw,25px);letter-spacing:.06em;text-wrap:balance}
-  .overlay p{margin:0;color:var(--bone-dim);font-size:14px;max-width:96ch;line-height:1.45}
+  .overlay p{margin:0;color:var(--bone-dim);font-size:14px;max-width:62ch;line-height:1.45}
   .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--blood)}
 
 
@@ -93,7 +86,7 @@
   /* sala y escenarios comparten fila: así la selección de cazador se queda
      con el alto que necesita sin empujar los botones fuera de pantalla */
   .topcols{display:grid;grid-template-columns:minmax(360px,1fr) minmax(360px,1fr);
-    gap:10px;width:100%;max-width:min(1700px,100%);align-items:start}
+    gap:10px;width:100%;max-width:1020px;align-items:start}
   .topcols .room{max-width:none}
   .topcols .stages{max-width:none;gap:6px}
   .stages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:820px}
@@ -134,10 +127,7 @@
       radial-gradient(circle at calc(100% - 5px) calc(100% - 5px), #E2C88A 0 2px, #6B5A38 2px 3.2px, transparent 3.4px);
   }
 
-  /* El selector se queda con todo el alto que sobre dentro del recuadro:
-     ni deja hueco muerto ni obliga a rodar la rueda. */
-  .selector{width:100%;max-width:min(1700px,100%);display:flex;flex-direction:column;gap:9px;
-    flex:1 1 auto;min-height:0}
+  .selector{width:100%;max-width:1020px;display:flex;flex-direction:column;gap:9px}
 
   /* barra de jugadores: solo se ven los que están dentro */
   .pbar{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;align-items:center}
@@ -158,23 +148,19 @@
   .padd:hover:not(:disabled){color:#FFF1CE;border-color:#C6AC76}
   .padd:disabled{opacity:.4;cursor:default}
 
-  .selbody{display:grid;grid-template-columns:clamp(280px,24%,360px) 1fr;gap:10px;
-    align-items:stretch;flex:1 1 auto;min-height:300px;max-height:660px}
+  .selbody{display:grid;grid-template-columns:302px 1fr;gap:10px;align-items:stretch}
 
   /* ficha del cazador elegido */
-  .hpanel{padding:13px 14px;display:flex;flex-direction:column;gap:6px;text-align:center;min-height:0}
-  /* El retrato ocupa el hueco que quede y nunca se recorta: la figura se
-     encoge para caber entera, centrada, sea cual sea el alto del panel. */
-  .hp-port{flex:1 1 auto;min-height:110px;display:grid;place-items:center;overflow:hidden;border-radius:2px;
+  .hpanel{padding:13px 14px;display:flex;flex-direction:column;gap:6px;text-align:center}
+  .hp-port{height:210px;display:grid;place-items:center;overflow:hidden;border-radius:2px;
     border:1px solid #14100D;
     background:
       radial-gradient(76% 62% at 50% 26%, color-mix(in srgb, var(--c) 26%, #171222) 0%, #0A0812 100%);
     box-shadow:inset 0 0 0 1px rgba(226,200,138,.22),inset 0 0 40px rgba(0,0,0,.7)}
   /* los retratos son pintura, no pixel art: aquí sí se interpola */
-  .hp-port img{width:100%;height:100%;object-fit:contain;object-position:center;
-    image-rendering:auto;padding:6px;
+  .hp-port img{height:202px;width:auto;max-width:100%;object-fit:contain;image-rendering:auto;
     filter:drop-shadow(0 6px 14px rgba(0,0,0,.65))}
-  .hp-port img.pix{image-rendering:pixelated;padding:14px}
+  .hp-port img.pix{image-rendering:pixelated;height:168px}
   .hp-name{font-family:var(--display);font-size:19px;letter-spacing:.05em;color:var(--c);
     text-shadow:0 0 18px color-mix(in srgb, var(--c) 40%, transparent)}
   .hp-role{font-size:12px;color:#B9AE93;line-height:1.35}
@@ -183,29 +169,28 @@
   .hp-line .ic{width:26px;height:26px;padding:3px;border-radius:2px;background:#0B0910;
     border:1px solid #6B5A38;display:grid;place-items:center;line-height:0;flex:none}
   .hp-line .tx{font-size:11.5px;color:var(--gold);text-align:left;line-height:1.3}
-  .hp-note{font-size:11.5px;color:#9A907A;line-height:1.35}
+  .hp-note{font-size:11.5px;color:#9A907A;line-height:1.35;flex:1}
   .hp-btns{display:flex;gap:6px}
 
   /* el plantel */
-  .rpanel{padding:13px 14px 14px;display:flex;flex-direction:column;gap:8px;min-height:0}
+  .rpanel{padding:13px 14px 14px;display:flex;flex-direction:column;gap:8px}
   .rlabel{font-family:var(--display);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
     color:#C6AC76;text-align:left}
   /* los recuadros se estiran para llenar el panel: cuanto más sitio hay,
      más grande se ve cada cazador */
   .tiles{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;
-    flex:1;grid-auto-rows:min-content;align-content:center}
+    flex:1;grid-auto-rows:minmax(104px,1fr)}
   .tile{cursor:pointer;font-family:var(--body);padding:4px 3px 5px;border-radius:3px;
     display:flex;flex-direction:column;align-items:center;gap:3px;min-height:0;
     color:#9A907A;border:1px solid #14100D;
     background:linear-gradient(180deg,#312B23,#1B1713);
     box-shadow:inset 0 1px 0 rgba(255,238,196,.12),inset 0 -1px 0 rgba(0,0,0,.5)}
-  .tile .tp{width:100%;aspect-ratio:1/1.08;flex:none;border-radius:2px;display:grid;place-items:center;
+  .tile .tp{width:100%;flex:1;min-height:0;border-radius:2px;display:grid;place-items:center;
     overflow:hidden;background:radial-gradient(70% 60% at 50% 30%,#1B1526 0%,#09070F 100%);
     border:1px solid #14100D}
-  /* Mismo trato en los recuadros: contenida y centrada, nunca recortada. */
-  .tile .tp img{width:100%;height:100%;object-fit:contain;object-position:center;
-    image-rendering:auto;padding:3px}
-  .tile .tp img.pix{image-rendering:pixelated;padding:8px}
+  .tile .tp img{width:100%;height:100%;object-fit:contain;object-position:top center;
+    image-rendering:auto}
+  .tile .tp img.pix{image-rendering:pixelated;width:auto;height:84%}
   .tile .tn{font-size:10.5px;line-height:1.12;letter-spacing:.02em;text-align:center;
     min-height:2.24em;display:grid;place-items:center;flex:none}
   .tile:hover{color:#E9DFC6;border-color:#6B5A38}
@@ -291,7 +276,6 @@
   .bank span{color:var(--bone-dim);letter-spacing:.05em}
   .bank b{color:var(--bone);font-variant-numeric:tabular-nums}
   .bank .g{color:var(--gold)}
-  .party:empty{display:none}
   .party{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:9px}
   .pcard{background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--c);
     border-radius:3px;padding:9px 11px;display:flex;flex-direction:column;gap:6px}
@@ -309,16 +293,8 @@
   .kit i b{position:absolute;right:-2px;bottom:-4px;font-size:9px;color:var(--bone);
     background:var(--panel);padding:0 2px;font-variant-numeric:tabular-nums}
 
-  /* La chuleta va plegada: el alto que ahorra se lo queda el lienzo. */
-  .legenda{border-top:1px solid var(--edge);padding-top:8px}
-  .legenda>summary{cursor:pointer;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--bone-dim);list-style:none;user-select:none}
-  .legenda>summary::-webkit-details-marker{display:none}
-  .legenda>summary::before{content:"▸ ";color:var(--gold)}
-  .legenda[open]>summary::before{content:"▾ "}
-  .legenda>summary:hover{color:var(--bone)}
   .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 18px;
-    font-size:12.5px;color:var(--bone-dim);line-height:1.5;padding-top:10px}
+    font-size:12.5px;color:var(--bone-dim);line-height:1.5;border-top:1px solid var(--edge);padding-top:12px}
   .legend b{color:var(--bone);font-weight:600}
   .legend .chip{display:inline-block;width:9px;height:9px;margin-right:6px}
 
@@ -366,7 +342,7 @@
     <div class="overlay" id="menu">
       <div class="eyebrow">Solo mueves · las armas disparan solas</div>
       <h2>La noche de la caza</h2>
-      <p>Treinta minutos. Casa un arma con su pasivo y un cofre la hará evolucionar. El oro sobrevive a tu muerte.</p>
+      <p>Treinta minutos. Sube de nivel, casa un arma con su pasivo y el cofre de un jefe la hará evolucionar. El oro sobrevive a tu muerte.</p>
       <div class="topcols">
       <div class="room" id="room">
         <div class="rtop">
@@ -467,8 +443,6 @@
 
   <div class="party" id="party"></div>
 
-  <details class="legenda">
-  <summary>Cómo funciona la cacería</summary>
   <div class="legend">
     <div><span class="chip" style="background:#46E0C8"></span><b>Gemas</b> — azul, verde o roja según el valor. Cada nivel abre tres cartas, y una cuarta si la suerte acompaña.</div>
     <div><span class="chip" style="background:#E5B95C"></span><b>Evoluciones</b> — arma al 8 y su pasivo al máximo. Las desata un cofre, nunca el draft, y solo después del minuto 10.</div>
@@ -479,20 +453,19 @@
     <div><span class="chip" style="background:#5FBF6A"></span><b>Laurel</b> — el escudo absorbe golpes enteros. El Sudario los limita a diez.</div>
     <div><span class="chip" style="background:#6E6A80"></span><b>30:00</b> — llega la Segadora. Nadie la mata; solo se sobrevive hasta ella.</div>
   </div>
-  </details>
 </div>
 
-<script src="sprites.js?v=20"></script>
-<script src="icons.js?v=20"></script>
-<script src="foes.js?v=20"></script>
-<script src="props.js?v=20"></script>
-<script src="world.js?v=20"></script>
-<script src="data.js?v=20"></script>
-<script src="weapons.js?v=20"></script>
-<script src="arcana.js?v=20"></script>
-<script src="engine.js?v=20"></script>
-<script src="net.js?v=20"></script>
-<script src="ui.js?v=20"></script>
+<script src="sprites.js?v=19"></script>
+<script src="icons.js?v=19"></script>
+<script src="foes.js?v=19"></script>
+<script src="props.js?v=19"></script>
+<script src="world.js?v=19"></script>
+<script src="data.js?v=19"></script>
+<script src="weapons.js?v=19"></script>
+<script src="arcana.js?v=19"></script>
+<script src="engine.js?v=19"></script>
+<script src="net.js?v=19"></script>
+<script src="ui.js?v=19"></script>
 <script>
 (function(){
   function start(saved){ V.ui.boot(saved || {}); }
