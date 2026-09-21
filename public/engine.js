@@ -88,10 +88,20 @@
     for(k in p.passives){
       var def = V.PASSIVES[k], lv = p.passives[k];
       if(!def) continue;
-      if(def.stat === "amount" || def.stat === "armor" || def.stat === "revival" || def.stat === "recovery")
-        st[def.stat] += def.step*lv;
-      else st[def.stat] += def.step*lv;
+      if(def.stats){                       // pasivo que toca varias estadísticas
+        for(var sk in def.stats) st[sk] += def.stats[sk]*lv;
+      } else if(def.stat) st[def.stat] += def.step*lv;
     }
+    /* rasgo del héroe que crece con el nivel, como en el original:
+       no es un bonus fijo, se hace más grande cada N niveles */
+    if(h.grow) for(var gi=0; gi<h.grow.length; gi++){
+      var gd = h.grow[gi], n = Math.floor((p.lvl||1)/gd.per);
+      if(n <= 0) continue;
+      if(gd.stat === "amount" || gd.stat === "armor" ||
+         gd.stat === "revival" || gd.stat === "recovery") st[gd.stat] += gd.step*n;
+      else st[gd.stat] *= 1 + gd.step*n;
+    }
+
     var m = V.meta || {};
     st.maxHealth *= 1 + (m.vida||0)*0.12;
     st.might     *= 1 + (m.dano||0)*0.06;
@@ -99,6 +109,7 @@
     st.magnet    *= 1 + (m.iman||0)*0.25;
     st.greed     *= 1 + (m.codicia||0)*0.15;
     st.luck      *= 1 + (m.suerte||0)*0.10;
+    if(V.arc) V.arc.stats(p, st);
     /* topes del original: daño x10, área x10, velocidad x5, duración x5,
        recarga mínima al 10%, armadura 50, proyectiles extra 10 */
     st.might    = Math.min(st.might, 10);
@@ -131,20 +142,24 @@
     if(s.speed !== undefined && w.def.persistent !== true) s.speed *= st.speed;
     s.cd = Math.max(.05, (s.cd||1)*st.cooldown);
     if(s.count !== undefined) s.count = Math.max(1, Math.round(s.count + st.amount));
+    if(V.arc) V.arc.weapon(p, w, s, runT);
+    if(s.count !== undefined) s.count = Math.max(1, Math.round(s.count));
     return s;
   }
   G.weaponStats = weaponStats;
 
   /* ---------------- API para las armas ---------------- */
   function shoot(o){
-    bullets.push({
+    var _bl = {
       x:o.x, y:o.y, vx:Math.cos(o.ang)*o.sp, vy:Math.sin(o.ang)*o.sp,
       sp:o.sp, ang:o.ang, dmg:o.dmg, pierce:o.pierce||1, life:o.life||2,
       r:o.r||6, spr:o.spr, owner:o.owner, behavior:o.behavior||"straight",
       rot:o.rot, spin:o.spin||0, rotA:o.ang, blast:o.blast||0, cool:o.cool||0,
       greedy:o.greedy, critChance:o.critChance, hit:null, t:0, home:o.owner,
       nid:(++nidSeq)&65535
-    });
+    };
+    if(V.arc && o.owner) V.arc.bullet(o.owner, _bl);
+    bullets.push(_bl);
   }
   function area(o){
     o.max = o.life; o.t = 0; o.hitSet = null; o.acc = 0;
@@ -248,7 +263,11 @@
     var f = foes[idx];
     if(!f || f.dead || f.def.reaper) return;
     var isCrit = false;
-    if(critChance && owner && Math.random() < critChance*(owner.st.luck||1)){ dmg*=2; isCrit=true; }
+    if(owner && V.arc) dmg = V.arc.damage(owner, dmg);
+    if(critChance && owner && Math.random() < critChance*(owner.st.luck||1)){
+      dmg *= V.arc ? V.arc.critMul(owner) : 2;
+      isCrit = true;
+    }
     f.hp -= dmg; f.hit = .1;
     if(kx||ky){ var m = f.def.elite?0.12:1; f.kx += kx*m; f.ky += ky*m; }
     if((f.def.elite || isCrit) && Math.random()<0.4) floatText(f.x, f.y-f.r-6, Math.round(dmg), isCrit?"#FFE066":"#FFFFFF");
@@ -259,11 +278,12 @@
     if(f.dead) return;
     f.dead = true;
     var st = owner ? owner.st : {greed:1, luck:1, curse:1};
+    var luckR = (V.arc && owner) ? V.arc.luck(owner, st.luck||1) : (st.luck||1);
 
     if(f.def.light){                       // una luz rota: monedas o un poder
       burst(f.x, f.y, "#FFD36B", 14);
       beep(880,.08,"square",.03);
-      if(Math.random() < 0.40*(st.luck||1)) drops.push({x:f.x,y:f.y,kind:pickPower(),v:1});
+      if(Math.random() < 0.40*luckR) drops.push({x:f.x,y:f.y,kind:pickPower(),v:1});
       else {
         var r = Math.random()*(st.luck||1);
         var coin = r>0.96 ? 100 : (r>0.70 ? 10 : 1);
@@ -274,6 +294,8 @@
 
     kills++;
     if(owner) owner.kills++;
+    if(f.freeze > 0 && owner && V.arc && V.arc.has(owner,"limites"))
+      arcApi.ring(f.x, f.y, 84, 70*(owner.st.might||1), owner);
     burst(f.x, f.y, f.def.elite ? "#C2263A" : (stage ? stage.accent : "#8E1F2F"), f.def.elite?46:5);
     if(f.def.xp > 0) dropGem(f.x, f.y, f.def.xp);
     if(Math.random() < f.def.gold*(st.luck||1))
@@ -315,7 +337,12 @@
       hp:1, maxhp:1, xp:0, lvl:1, next:5, kills:0,
       weapons:[], passives:{}, st:baseStats(),
       aimx:1, aimy:0, walk:0, face:1, hurt:0, iframe:0, down:false, reviveProg:0,
-      revivesUsed:0, regenAcc:0, shield:null
+      revivesUsed:0, regenAcc:0, shield:null,
+      // cargas del santuario, como los "power-up" del original
+      rerolls:(V.meta&&V.meta.reroll)||0,
+      skips:(V.meta&&V.meta.skip)||0,
+      banishes:(V.meta&&V.meta.banish)||0,
+      banned:{}, arcana:{}, startWeapon:h.weapon, moving:false
     };
     recalc(p);
     p.hp = p.maxhp;
@@ -364,6 +391,18 @@
     return bp;
   }
 
+  /* Toda curación pasa por aquí: así la Zarabanda puede doblarla y hacer
+     que cada punto recuperado hiera a lo que tengas cerca. */
+  function healPlayer(p, amount){
+    if(amount <= 0) return 0;
+    if(V.arc) amount = V.arc.heal(p, amount, function(n){
+      hitCircle(p.x, p.y, 110*(p.st.area||1), n, p, 0, 0, "zarabanda", .4, true);
+    });
+    p.hp = Math.min(p.maxhp, p.hp + amount);
+    return amount;
+  }
+  G.healPlayer = healPlayer;
+
   function hurtPlayer(p, dmg){
     if(p.down || p.iframe>0 || !G.state.running) return;
     if(p.shield && p.shield.ch > 0){
@@ -372,6 +411,7 @@
     }
     dmg = Math.max(1, dmg - (p.st.armor||0));
     p.hp -= dmg; p.hurt = .2; p.iframe = .38;
+    if(V.arc) V.arc.hurt(p, dmg, arcApi);
     shake = Math.max(shake, Math.min(7, dmg*.28));
     beep(170,.06,"square",.04);
     if(p.hp <= 0) down(p);
@@ -381,6 +421,7 @@
     var revives = (p.st.revival||0) + ((V.meta && V.meta.alma) ? 1 : 0);
     if(p.revivesUsed < revives){
       p.revivesUsed++;
+      if(V.arc && V.arc.has(p,"despertar")){ p.arcAwake = (p.arcAwake||0)+1; recalc(p); }
       p.hp = p.maxhp*.6; p.iframe = 2.4;
       burst(p.x,p.y,"#FFFFFF",50);
       say(V.HEROES[p.hero].name + " se levanta.");
@@ -402,6 +443,34 @@
     var d = dist || (Math.max(canvas.width,canvas.height)/zoom)*.62;
     return {x:ref.x+Math.cos(a)*d, y:ref.y+Math.sin(a)*d};
   }
+  /* Lo que las arcanas necesitan del motor, en un solo sitio. */
+  function arcBlast(bl){
+    var o = bl.owner;
+    var curse = (o && o.st ? (o.st.curse||1) : 1);
+    area({x:bl.x, y:bl.y, w:88, h:88, kind:"pool", life:.26, color:"#C08BEF",
+      dmg:26*curse*((o&&o.st?o.st.might:1)||1), owner:o, once:true});
+  }
+  var arcApi = {
+    rf: rf,
+    area: function(x,y,r,dmg,color,owner){
+      area({x:x, y:y, w:r, h:r, kind:"pool", life:.3, color:color||"#FF8A3C",
+        dmg:dmg, owner:owner||null, once:false});
+      hitCircle(x, y, r*0.5, dmg, owner||null, 0, 0, "arcfuego", .5, true);
+    },
+    ring: function(x,y,r,dmg,owner){ hitCircle(x, y, r, dmg, owner||null, 0, 0, "arcring", .35, true); },
+    drop: function(x,y){
+      var k = Math.random() < .6 ? "oro" : pickPower();
+      drops.push({x:x, y:y, kind:k, v:k==="oro"?Math.round(rf(4,14)):1});
+    },
+    heal: function(p,n){ healPlayer(p, n); },
+    gather: function(p){
+      for(var i=0;i<drops.length;i++){ drops[i].x = p.x; drops[i].y = p.y; }
+      for(var g=0;g<gems.length;g++){ gems[g].x = p.x; gems[g].y = p.y; }
+      for(var f=0;f<foes.length;f++) if(foes[f].def.light){ foes[f].x = p.x+rf(-40,40); foes[f].y = p.y+rf(-40,40); }
+      say("El surco lo arrastra todo.");
+    }
+  };
+
   /* ---------------- objetos del suelo ----------------
      Los mismos que en el original: rosario, llamas, reloj de arena,
      llamada del vacío, festín y monedas. */
@@ -409,8 +478,8 @@
     var k = dr.kind;
     if(k === "oro"){ runGold += dr.v; floatText(dr.x,dr.y,"+"+dr.v,"#E5B95C"); return; }
     if(k === "carne"){
-      p.hp = Math.min(p.maxhp, p.hp + 30);
-      floatText(dr.x,dr.y,"+30","#C2263A"); beep(600,.12,"triangle",.05); return;
+      var got = healPlayer(p, 30);
+      floatText(dr.x,dr.y,"+"+Math.round(got),"#C2263A"); beep(600,.12,"triangle",.05); return;
     }
     if(k === "cofre"){ if(V.ui) V.ui.chest(p); return; }
     if(k === "rosario"){
@@ -450,7 +519,7 @@
      como mínimo y cada cuánto se comprueba. Al comprobar, si faltan, se
      generan hasta llenar el cupo. La maldición sube cupo y frecuencia.
      Por encima del tope de vivos solo entran jefes y eventos. */
-  var waveMin = -1, spawnT = 0, lightT = 3;
+  var waveMin = -1, spawnT = 0, lightT = 3, arcIdx = 0;
 
   function spawnRing(type, n, mul){
     var ref = alive()[0] || cam;
@@ -523,6 +592,16 @@
          Math.random() < Math.min(0.5, mods.lightChance*luck)) spawnLight();
     }
 
+    // minutos 11 y 21: cada superviviente elige una arcana
+    while(arcIdx < V.ARCANA_AT.length && runT >= V.ARCANA_AT[arcIdx]){
+      arcIdx++;
+      var vivos = alive();
+      for(var v2=0;v2<vivos.length;v2++) if(V.ui) V.ui.queueArcana(vivos[v2]);
+      say("Las cartas se reparten.");
+      beep(520,.5,"sine",.05);
+      if(V.ui) V.ui.maybeOpenDraft();
+    }
+
     if(runT >= V.RUN_LENGTH && !G.reaped){
       G.reaped = true;
       if(V.ui) V.ui.endRun(true);
@@ -565,18 +644,27 @@
         if(V.net && V.net.online) V.net.setInput(mv.mx, mv.my);
       }
       var ml = Math.hypot(mv.mx, mv.my);
+      p.moving = ml > .05;
+      if(V.arc) V.arc.tick(p, dt, arcApi);
       if(ml > .05){
         var mx=mv.mx/ml, my=mv.my/ml;
         p.aimx=mx; p.aimy=my; p.walk += dt*10;
         if(Math.abs(mx) > .2) p.face = mx>0?1:-1;
-        p.x += mx*p.speed*dt; p.y += my*p.speed*dt;
+        var stepx = mx*p.speed*dt, stepy = my*p.speed*dt;
+        // las casas frenan al jugador; la horda las atraviesa
+        if(V.world && V.world.solid){
+          var pr = p.r*0.8;
+          if(!V.world.solid(p.x + stepx + Math.sign(stepx)*pr, p.y)) p.x += stepx;
+          if(!V.world.solid(p.x, p.y + stepy + Math.sign(stepy)*pr)) p.y += stepy;
+          V.world.unstick(p);
+        } else { p.x += stepx; p.y += stepy; }
       }
       if(p.hurt>0) p.hurt-=dt;
       if(p.iframe>0) p.iframe-=dt;
       flameTick(p, dt);
       if(p.st.recovery){
         p.regenAcc += dt;
-        if(p.regenAcc >= 1){ p.regenAcc-=1; p.hp = Math.min(p.maxhp, p.hp + p.st.recovery); }
+        if(p.regenAcc >= 1){ p.regenAcc-=1; healPlayer(p, p.st.recovery); }
       }
 
       for(var w=0;w<p.weapons.length;w++){
@@ -594,7 +682,13 @@
         var gem=gems[g];
         var dx=p.x-gem.x, dy=p.y-gem.y, dd=Math.hypot(dx,dy)||.001;
         if(dd<mag){ var pull=clamp((mag-dd)/mag,0,1)*640+110; gem.x+=dx/dd*pull*dt; gem.y+=dy/dd*pull*dt; }
-        if(dd<18){ gainXp(p, gem.v); gems.splice(g,1); if(Math.random()<.2) beep(1100+Math.random()*400,.03,"square",.02); }
+        if(dd<18){
+          // con el Juego Roto la gema no da experiencia: estalla
+          if(V.arc && V.arc.has(p,"juego")) arcApi.ring(gem.x, gem.y, 92, 60*(p.st.might||1), p);
+          else gainXp(p, gem.v);
+          gems.splice(g,1);
+          if(Math.random()<.2) beep(1100+Math.random()*400,.03,"square",.02);
+        }
       }
       for(var d2=drops.length-1;d2>=0;d2--){
         var dr=drops[d2];
@@ -602,6 +696,7 @@
         if(dl<mag*.9){ dr.x+=ddx/dl*280*dt; dr.y+=ddy/dl*280*dt; }
         if(dl<20){
           takeDrop(p, dr);
+          if(V.arc) V.arc.pickup(p, dr, arcApi);
           drops.splice(d2,1);
         }
       }
@@ -632,11 +727,14 @@
 
   /* Subir de nivel no cura: en el original solo abre el draft. */
   function gainXp(p, v){
+    if(V.arc) v = V.arc.xp(p, v);
+    if(!v) return;
     p.xp += v * (p.st.growth||1);
     var leveled = false;
     while(p.xp >= p.next){
       p.xp -= p.next; p.lvl++;
       p.next = V.xpNeed(p.lvl);
+      recalc(p);
       if(V.ui) V.ui.queueDraft(p);
       leveled = true;
       beep(760,.12,"triangle",.05);
@@ -649,7 +747,15 @@
     for(var b=bullets.length-1;b>=0;b--){
       var bl=bullets[b];
       bl.t += dt; bl.life -= dt;
-      if(bl.life<=0){ if(bl.blast) blast(bl); bullets.splice(b,1); continue; }
+      if(bl.life<=0){
+        if(bl.blast) blast(bl);
+        if(bl.arcBlast) arcBlast(bl);
+        bullets.splice(b,1); continue;
+      }
+      if(bl.bounce > 0){                 // Vals de Perlas y Voluntad de Hierro
+        if(bl.x < v.x-v.hw || bl.x > v.x+v.hw){ bl.vx*=-1; bl.bounce--; }
+        if(bl.y < v.y-v.hh || bl.y > v.y+v.hh){ bl.vy*=-1; bl.bounce--; }
+      }
 
       if(bl.behavior === "arc"){
         bl.vy += 620*dt;
@@ -688,6 +794,8 @@
         }
         if(Math.hypot(f.x-bl.x, f.y-bl.y) > bl.r+f.r) continue;
         if(bl.cool){ f.tags["b"+bl.id] = bl.cool; }
+        if(bl.chill && Math.random() < bl.chill && !f.def.reaper)
+          f.freeze = Math.max(f.freeze, 1.6);
         var vl = Math.hypot(bl.vx,bl.vy)||1;
         var before = f.hp;
         damage(idx, bl.dmg, bl.owner, bl.vx/vl*70, bl.vy/vl*70, bl.critChance || (bl.owner.critChance));
@@ -949,6 +1057,15 @@
       ctx.drawImage(ps, -ps.width/2, -(ps.height-12));
       ctx.restore();
       ctx.globalAlpha=1;
+      // barra de vida pegada a los pies
+      var hf = clamp(pl.hp/pl.maxhp, 0, 1);
+      if(hf < 1){
+        var bw = 26, bx = Math.round(pl.x)-bw/2, by = Math.round(pl.y)+9;
+        ctx.fillStyle="rgba(7,6,14,.85)"; ctx.fillRect(bx-1, by-1, bw+2, 5);
+        ctx.fillStyle="#2A1018"; ctx.fillRect(bx, by, bw, 3);
+        ctx.fillStyle= hf<.3 ? "#FF4A5E" : "#C2263A";
+        ctx.fillRect(bx, by, Math.round(bw*hf), 3);
+      }
       if(players.length>1){
         ctx.fillStyle="rgba(7,6,14,.8)";
         ctx.fillRect(Math.round(pl.x)-7, Math.round(pl.y)-30, 14, 12);
@@ -1081,7 +1198,7 @@
     players.length=0; foes.length=0; bullets.length=0; areas.length=0;
     gems.length=0; drops.length=0; parts.length=0; floats.length=0;
     runT=0; kills=0; runGold=0;
-    waveMin=-1; spawnT=0; lightT=3; overflowGem=null; G.reaped=false;
+    waveMin=-1; spawnT=0; lightT=3; arcIdx=0; overflowGem=null; G.reaped=false;
     for(var i=0;i<slots.length;i++)
       if(slots[i].joined) makePlayer(i, slots[i], {x:0,y:0});
     cam.x=0; cam.y=0; zoom=baseZoom;
@@ -1151,7 +1268,7 @@
     players.length=0; foes.length=0; bullets.length=0; areas.length=0;
     gems.length=0; drops.length=0; parts.length=0; floats.length=0;
     runT=0; kills=0; runGold=0;
-    waveMin=-1; spawnT=0; lightT=3; overflowGem=null; G.reaped=false;
+    waveMin=-1; spawnT=0; lightT=3; arcIdx=0; overflowGem=null; G.reaped=false;
     for(var i=0;i<peers.length;i++){
       var p = makePlayer(i, {hero:V.net.heroOf(peers[i]), input:"kb1"}, {x:0,y:0});
       p.netPeer = peers[i];
@@ -1270,6 +1387,8 @@
     bullets.length = 0; areas.length = 0;
     runT = R.runT; runGold = R.gold;
     waveMin = Math.floor(runT/60);   // el nuevo anfitrión retoma el minuto en curso
+    arcIdx = 0;
+    while(arcIdx < V.ARCANA_AT.length && runT >= V.ARCANA_AT[arcIdx]) arcIdx++;
     for(var i=0;i<players.length;i++){
       for(var j=0;j<R.players.length;j++)
         if(R.players[j].peer === players[i].netPeer){

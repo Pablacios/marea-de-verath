@@ -60,16 +60,35 @@
   /* ---------------- parcelas ---------------- */
   // cada bloque de 8x8 baldosas recibe un uso; así los elementos salen
   // agrupados —una granja, un bosquecillo, un camposanto— y no esparcidos.
-  var LOTS = ["casa","cercado","arboleda","cementerio","cultivo","ruina","arboleda","vacio"];
+  var LOTS = ["casa","plaza","cercado","arboleda","cementerio","cultivo","ruina","vacio"];
   function lotOf(bx,by){
     var n = h2(bx*7+13, by*11+5);
-    if(n < .11) return "casa";
-    if(n < .25) return "cercado";
-    if(n < .45) return "arboleda";
-    if(n < .57) return "cementerio";
-    if(n < .67) return "cultivo";
-    if(n < .80) return "ruina";
+    if(n < .20) return "casa";        // manzanas de edificios: dan calles
+    if(n < .27) return "plaza";       // un respiro con pozo y farolas
+    if(n < .38) return "cercado";
+    if(n < .54) return "arboleda";
+    if(n < .65) return "cementerio";
+    if(n < .73) return "cultivo";
+    if(n < .86) return "ruina";
     return "vacio";
+  }
+
+  /* ---------------- lo que no se puede atravesar ----------------
+     Las casas son sólidas para el jugador. Los enemigos las cruzan: si no,
+     se amontonarían contra las paredes y la horda dejaría de funcionar.
+     Solo bloquean las casas, nunca los caminos, así que siempre hay paso. */
+  function houseAt(bx,by){
+    if(lotOf(bx,by) !== "casa") return null;
+    var hx = bx*CH+2, hy = by*CH+3;
+    for(var i=0;i<4;i++) for(var j=0;j<3;j++) if(isRoad(hx+i,hy+j)) return null;
+    return {x:hx, y:hy, w:4, h:3};
+  }
+  function solidAt(px, py){
+    var tx = Math.floor(px/T), ty = Math.floor(py/T);
+    var bx = Math.floor(tx/CH), by = Math.floor(ty/CH);
+    var hs = houseAt(bx,by);
+    if(!hs) return false;
+    return tx >= hs.x && tx < hs.x+hs.w && ty >= hs.y && ty < hs.y+hs.h;
   }
 
   /* ---------------- pinceles ---------------- */
@@ -260,6 +279,23 @@
   function drawLot(g, bx, by, ox, oy, P, stageKey){
     var type = lotOf(bx,by);
     if(type === "vacio") return;
+    if(type === "plaza"){
+      // una plaza empedrada con su pozo y cuatro luces: sirve de referencia
+      var qx = bx*CH, qy = by*CH;
+      for(var qi=1; qi<7; qi++) for(var qj=1; qj<7; qj++){
+        if(isRoad(qx+qi, qy+qj)) continue;
+        var ppx=(qx+qi-ox)*T, ppy=(qy+qj-oy)*T;
+        rect(g, P.roadD, ppx, ppy, T, T);
+        rect(g, P.road, ppx+1, ppy+1, T-2, T-2);
+        rect(g, P.roadL, ppx+2, ppy+2, 12, 1);
+      }
+      well(g,P,(qx+3-ox)*T,(qy+3-oy)*T);
+      lamp(g,P,(qx+1-ox)*T,(qy+1-oy)*T);
+      lamp(g,P,(qx+6-ox)*T,(qy+1-oy)*T);
+      lamp(g,P,(qx+1-ox)*T,(qy+6-oy)*T);
+      lamp(g,P,(qx+6-ox)*T,(qy+6-oy)*T);
+      return;
+    }
     var baseX = bx*CH, baseY = by*CH;
     function px(tx){ return (tx-ox)*T; }
     function py(ty){ return (ty-oy)*T; }
@@ -364,6 +400,19 @@
     palette:function(k){ return PAL[k]; },
     bg:function(k){ return PAL[k].bg; },
     isRoad:isRoad,
+    solid:solidAt,
+    /* Saca a un personaje de dentro de una casa si acaba metido en una:
+       busca en espiral la baldosa libre más cercana. */
+    unstick:function(p){
+      if(!solidAt(p.x,p.y)) return;
+      for(var r=1; r<=8; r++){
+        for(var a=0; a<12; a++){
+          var an = (a/12)*6.283;
+          var nx = p.x + Math.cos(an)*r*T, ny = p.y + Math.sin(an)*r*T;
+          if(!solidAt(nx,ny)){ p.x = nx; p.y = ny; return; }
+        }
+      }
+    },
     reset:function(){ cache.clear(); order.length=0; cacheKeyStage=null; },
     draw:function(g, camX, camY, zoom, w, h, stageKey){
       var hw=(w/zoom)/2, hh=(h/zoom)/2;

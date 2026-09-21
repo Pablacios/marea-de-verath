@@ -573,5 +573,112 @@
     "..h...h.."
   ]);
 
+  ico("arcana", {c:"#6A4A8E", b:"#C08BEF", s:"#FFF4D6"}, [
+    "ccccccccc",
+    "cbbbbbbbc",
+    "cb..s..bc",
+    "cb.sss.bc",
+    "cbs.s.sbc",
+    "cb.sss.bc",
+    "cb..s..bc",
+    "cbbbbbbbc",
+    "ccccccccc"
+  ]);
+
+  /* ========== ARMAS Y PASIVOS AÑADIDOS ========== */
+
+  ico("pluma", {w:"#E8EEFF", s:"#B8C2D8"}, [
+    ".......ww",
+    "......www",
+    ".....wwww",
+    "....wwsww",
+    "...wwswww",
+    "..wwswww.",
+    ".wwswww..",
+    "wwsww....",
+    "ws.w.....",
+    "s........"
+  ]);
+
+  ico("viento", {a:"#DCE8FF", b:"#8FA8FF"}, [
+    "...aaaaaaaa..",
+    "aaaa......aa.",
+    "...........aa",
+    "..bbbbbbbbbb.",
+    "bbb.......bb.",
+    "...aaaaaaaa..",
+    "aaa.....aa..."
+  ]);
+
+  ico("brazalete", {p:"#C08BEF", s:"#FFF4D6"}, [
+    "..ppppp..",
+    ".pp...pp.",
+    "pp..s..pp",
+    "p..sss..p",
+    "pp..s..pp",
+    ".pp...pp.",
+    "..ppppp.."
+  ]);
+
+  ico("victoria", {b:"#FFF3D0", g:"#E5B95C", h:"#6B4A2F"}, [
+    "......b..",
+    ".....bbb.",
+    ".....bbb.",
+    ".....bbb.",
+    ".....bbb.",
+    "...ggggg.",
+    ".....h...",
+    ".....h...",
+    "....ggg.."
+  ]);
+
+  ico("p_torrona", {c:"#C08BEF", g:"#E5B95C", s:"#FFF4D6"}, [
+    ".ccccccccc.",
+    "cgggggggggc",
+    "cg..sss..gc",
+    "cg.sssss.gc",
+    "cg..sss..gc",
+    "cgggggggggc",
+    ".ccccccccc."
+  ]);
+
+  ico("p_plata", {m:"#C9CEDC", s:"#FFF4D6"}, [
+    "...sss...",
+    "..mm.mm..",
+    ".mm...mm.",
+    ".mm...mm.",
+    ".mm...mm.",
+    "..mm.mm..",
+    "...mmm..."
+  ]);
+
+  ico("p_oro", {m:"#E5B95C", s:"#FFF4D6"}, [
+    "...sss...",
+    "..mm.mm..",
+    ".mm...mm.",
+    ".mm...mm.",
+    ".mm...mm.",
+    "..mm.mm..",
+    "...mmm..."
+  ]);
+
+  ico("p_metaizq", {b:"#8FA8FF", s:"#FFF4D6"}, [
+    "bbbbb....",
+    "bbsbbb...",
+    "bb.sbbb..",
+    "bb..sbbb.",
+    "bb...sbbb",
+    "bbbbbbbbb"
+  ]);
+
+  ico("p_metader", {r:"#C2263A", s:"#FFF4D6"}, [
+    "....rrrrr",
+    "...rrrsrr",
+    "..rrrs.rr",
+    ".rrrs..rr",
+    "rrrs...rr",
+    "rrrrrrrrr"
+  ]);
+
   V.ICONS = ICON;
 })();

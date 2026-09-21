@@ -378,5 +378,226 @@
     "........................"
   ], {shadow:true, legs:23});
 
-  V.HERO_SPRITES = ["h_cazador","h_vicaria","h_doctor","h_bestia","h_astronoma","h_verdugo"];
+  /* ================= DIEZ CAZADORES MÁS =================
+     Comparten el patrón de abrigo para que la silueta sea coherente, y se
+     distinguen por la cabeza, la paleta y el emblema del pecho. Es el mismo
+     recurso que usa el original: cuerpos parecidos, cabezas inconfundibles. */
+  function torso(c, k, m){
+    return [
+      ".....cccccccccccccc.....".replace(/c/g, c),
+      "....cccccccccccccccc....".replace(/c/g, c),
+      "...cccccccccccccccccc...".replace(/c/g, c),
+      "...cccc".replace(/c/g,c) + m[0] + "cccc...".replace(/c/g,c),
+      "...cccc".replace(/c/g,c) + m[1] + "cccc...".replace(/c/g,c),
+      "...cccc".replace(/c/g,c) + m[2] + "cccc...".replace(/c/g,c),
+      "...cccc".replace(/c/g,c) + m[3] + "cccc...".replace(/c/g,c),
+      "....cccccccccccccccc....".replace(/c/g, c),
+      "....cccccccccccccccc....".replace(/c/g, c),
+      ".....cccccccccccccc.....".replace(/c/g, c),
+      ".....cccccc..cccccc.....".replace(/c/g, c),
+      ".....cccccc..cccccc.....".replace(/c/g, c),
+      "......kkkk....kkkk......".replace(/k/g, k),
+      "......kkkk....kkkk......".replace(/k/g, k),
+      ".....kkkkk....kkkkk.....".replace(/k/g, k),
+      "........................"
+    ];
+  }
+  function hero(key, pal, head, c, k, motif, opt){
+    def(key, pal, head.concat(torso(c, k, motif)), opt || {shadow:true, legs:25});
+  }
+
+  /* --- La Viuda: velo de luto y tocado alto --- */
+  hero("h_viuda", {n:"#1A1420", v:"#3A2C48", s:"#C9A283", e:"#1A1A2A",
+                   g:"#D8B24E", b:"#141019", p:"#7A2E52"}, [
+    "........................",
+    "........nnnnnnnn........",
+    ".......nnnnnnnnnn.......",
+    "......nnnnnnnnnnnn......",
+    "......nnvvvvvvvvnn......",
+    "......nvvvvvvvvvvn......",
+    "......nvvssssssvvn......",
+    "......nvssseessssn......",
+    "......nvvssssssvvn......",
+    ".......vvssssssvv.......",
+    ".......vvvssssvvv.......",
+    "........vvvvvvvv........",
+    ".........vvvvvv.........",
+    "........nnnnnnnn........"
+  ], "n", "b", ["..gg..gg..", ".gpppppg..", ".gpppppg..", "..gg..gg.."]);
+
+  /* --- El Farolero: farol colgando de una pértiga --- */
+  hero("h_farolero", {c:"#2A2438", f:"#F2C46A", m:"#8A8C9E", s:"#C9A283",
+                      e:"#1A1A2A", b:"#161020", y:"#FFE9B0"}, [
+    "..................mm....",
+    ".................mffm...",
+    "......cccccccc...mfym...",
+    ".....cccccccccc..mffm...",
+    "....cccccccccccc.mmmm...",
+    "....cccccccccccc..mm....",
+    ".....ssssssssss...mm....",
+    ".....sseesseess...mm....",
+    ".....ssssssssss...mm....",
+    "......ssssssss....mm....",
+    ".......ssssss.....mm....",
+    "........ssss......mm....",
+    "......cccccccc....mm....",
+    ".....cccccccccc...mm...."
+  ], "c", "b", ["...ffff...", "..ffyyff..", "..ffyyff..", "...ffff..."]);
+
+  /* --- El Sepulturero: gorro calado y bufanda --- */
+  hero("h_sepulturero", {c:"#33302A", g:"#4A4438", s:"#B99A7C", e:"#1A1A2A",
+                         r:"#6E4A2E", b:"#181410", w:"#8A8474"}, [
+    "........................",
+    "........................",
+    "......gggggggggg........",
+    ".....gggggggggggg.......",
+    ".....gggggggggggg.......",
+    "......ssssssssss........",
+    "......sseesseess........",
+    "......ssssssssss........",
+    ".......ssssssss.........",
+    "......rrrrrrrrrr........",
+    ".....rrrrrrrrrrrr.......",
+    "......rrrrrrrrrr........",
+    ".......ssssssss.........",
+    "......cccccccccc........"
+  ], "c", "b", ["....ww....", "...wwww...", "..wwwwww..", "....ww...."]);
+
+  /* --- La Niña Pálida: cabeza grande, coletas, muñeca --- */
+  hero("h_nina", {d:"#E8E2D4", s:"#EFE4D8", e:"#2A2436", h:"#6E3A52",
+                  v:"#8A5A78", b:"#2A2030", r:"#C2263A"}, [
+    "........................",
+    "......hh........hh......",
+    ".....hhhh......hhhh.....",
+    ".....hhhhhhhhhhhhhh.....",
+    "....hhhhhhhhhhhhhhhh....",
+    "....hhssssssssssssh.....",
+    "....hsssssssssssssh.....",
+    "....hsseessseesssssh....",
+    "....hssssssssssssssh....",
+    ".....hsssssrrsssssh.....",
+    ".....hhsssssssssshh.....",
+    "......hhhssssssshh......",
+    ".......hhhhhhhhhh.......",
+    "........vvvvvvvv........"
+  ], "v", "b", ["...rrrr...", "..rrrrrr..", "..rrrrrr..", "...rrrr..."],
+     {shadow:true, legs:26});
+
+  /* --- El Coleccionista: chistera y monóculo --- */
+  hero("h_coleccionista", {t:"#1C1826", c:"#2E2A3A", s:"#C9A283", e:"#1A1A2A",
+                           g:"#E5B95C", b:"#141019", w:"#D8CFC0"}, [
+    "........................",
+    ".......tttttttttt.......",
+    ".......tttttttttt.......",
+    ".......tttttttttt.......",
+    "......tttttttttttt......",
+    ".....tttttttttttttt.....",
+    "......ssssssssssss......",
+    "......sseessgsssss......",
+    "......ssssssgsssss......",
+    ".......ssssssssss.......",
+    "........ssssssss........",
+    "........wwwwwwww........",
+    ".......cccccccccc.......",
+    "......cccccccccccc......"
+  ], "c", "b", ["..gggggg..", ".gg....gg.", ".gg....gg.", "..gggggg.."]);
+
+  /* --- El Penitente: capucha baja y cadenas --- */
+  hero("h_penitente", {h:"#2A2028", s:"#B99A7C", e:"#1A1A2A", m:"#8A8C9E",
+                       c:"#3A2E34", b:"#181218", r:"#8E1F2F"}, [
+    "........................",
+    "........................",
+    "......hhhhhhhhhh........",
+    ".....hhhhhhhhhhhh.......",
+    "....hhhhhhhhhhhhhh......",
+    "....hhhhhhhhhhhhhh......",
+    "....hhhhssssssshhh......",
+    "....hhhsseesssshhh......",
+    "....hhhhsssssshhhh......",
+    ".....hhhhssssshhh.......",
+    "......hhhhhhhhhh........",
+    ".......hhhhhhhh.........",
+    "......mmmmmmmmmm........",
+    ".....cccccccccccc......."
+  ], "c", "b", ["..mm..mm..", "..mm..mm..", ".mmmmmmmm.", "....rr...."]);
+
+  /* --- La Cantora: peinado alto y gargantilla --- */
+  hero("h_cantora", {p:"#5A2E4A", s:"#D8B79A", e:"#1A1A2A", g:"#D8B24E",
+                     c:"#7A3A5E", b:"#2A1622", w:"#EFE4D8"}, [
+    ".........pppp...........",
+    "........pppppp..........",
+    ".......pppppppp.........",
+    "......pppppppppp........",
+    "......pppssssspp........",
+    "......ppsssssssp........",
+    "......psseessssp........",
+    "......pssssssssp........",
+    ".......pssssssp.........",
+    ".......ppsssspp.........",
+    "........pppppp..........",
+    "........gggggg..........",
+    "......cccccccccc........",
+    ".....cccccccccccc......."
+  ], "c", "b", ["...wwww...", "..wwwwww..", "..wwgwwww.", "...wwww..."]);
+
+  /* --- El Alquimista: gafas de cristal y capucha corta --- */
+  hero("h_alquimista", {c:"#26382E", s:"#C9A283", e:"#1A1A2A", g:"#7CC6FF",
+                        m:"#8A8C9E", b:"#141A16", y:"#B6E06A"}, [
+    "........................",
+    "........................",
+    "......cccccccccc........",
+    ".....cccccccccccc.......",
+    "....cccccccccccccc......",
+    "....ccggccccccggcc......",
+    "....ccggccccccggcc......",
+    "....cccccccccccccc......",
+    ".....sssssssssss........",
+    ".....ssssssssss.........",
+    "......ssssssss..........",
+    "......mmmmmmmm..........",
+    ".....cccccccccc.........",
+    "....cccccccccccc........"
+  ], "c", "b", ["...yyyy...", "..yyyyyy..", "..yyyyyy..", "...yyyy..."]);
+
+  /* --- El Titiritero: máscara partida y cruceta de hilos --- */
+  hero("h_titiritero", {c:"#2A2438", w:"#E4E0D2", e:"#1A1A2A", m:"#8A7A5A",
+                        b:"#161222", r:"#8E1F2F", g:"#D8B24E"}, [
+    "....mmmmmmmmmmmm........",
+    ".......m..m..m..........",
+    ".......m..m..m..........",
+    "......wwwwwwwwww........",
+    ".....wwwwwwwwwwww.......",
+    ".....wwwwwwwwwwww.......",
+    ".....wweewwwweeww.......",
+    ".....wwwwwwwwwwww.......",
+    ".....wwrrwwwwrrww.......",
+    "......wwwwwwwwww........",
+    "......wwwwwwwwww........",
+    ".......wwwwwwww.........",
+    "......cccccccccc........",
+    ".....cccccccccccc......."
+  ], "c", "b", ["...gggg...", "..g....g..", "..g....g..", "...gggg..."]);
+
+  /* --- La Hija del Cuervo: pico, plumas y capa negra --- */
+  hero("h_cuerva", {n:"#1E1A24", k:"#0F0D14", s:"#C9A283", e:"#E5B95C",
+                    g:"#8A8C9E", b:"#120F18", p:"#3A3448"}, [
+    "........................",
+    "......nnnnnnnnnn........",
+    ".....nnnnnnnnnnnn.......",
+    "....nnnnnnnnnnnnnn......",
+    "....nneennnnnneenn......",
+    "....nnnnnnnnnnnnnn......",
+    ".....nnnnggggnnnn.......",
+    "......nnngggggnn........",
+    ".......nnggggnnn........",
+    "........nggggn..........",
+    ".........nggn...........",
+    "........ssssss..........",
+    "......pppppppppp........",
+    ".....pppppppppppp......."
+  ], "p", "b", ["..nn..nn..", ".nnnnnnnn.", ".nnnnnnnn.", "..nn..nn.."]);
+
+  V.HERO_SPRITES = ["h_cazador","h_vicaria","h_doctor","h_bestia","h_astronoma","h_verdugo",
+    "h_viuda","h_farolero","h_sepulturero","h_nina","h_coleccionista","h_penitente",
+    "h_cantora","h_alquimista","h_titiritero","h_cuerva"];
 })();

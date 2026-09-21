@@ -85,7 +85,7 @@
   .slot .dev{font-size:10.5px;color:var(--bone-dim)}
   .port{height:54px;display:grid;place-items:center;background:#0C0A14;border:1px solid var(--edge);border-radius:2px}
   .port img{height:48px;width:auto}
-  .picks{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+  .picks{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
   .pick{aspect-ratio:1;border:1px solid var(--edge);background:#0C0A14;border-radius:2px;padding:2px;
     color:var(--pc);font-size:12px;cursor:pointer;display:grid;place-items:center;padding:0;
     font-family:var(--body)}
@@ -111,6 +111,40 @@
   /* los iconos son pixel art: se escalan sin suavizar y nunca pasan de su caja */
   .icn{image-rendering:pixelated;image-rendering:crisp-edges;
     width:100%;height:100%;object-fit:contain;display:block}
+  .cuenta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    background:var(--panel);border:1px solid var(--edge);border-radius:3px;padding:8px 12px}
+  .cuenta input{font-family:var(--body);font-size:13px;width:14ch;background:#0C0A14;
+    color:var(--gold);border:1px solid var(--edge);border-radius:2px;padding:5px 7px}
+  .cuenta .joinbtn{width:auto;padding:5px 12px}
+  .cuenta .hstate{font-size:11.5px;color:var(--bone-dim)}
+  .dbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .dbtn{font-family:var(--body);font-size:11.5px;letter-spacing:.06em;cursor:pointer;
+    background:transparent;border:1px solid var(--edge);color:var(--bone-dim);
+    border-radius:2px;padding:6px 14px}
+  .dbtn:hover:not(:disabled){color:var(--bone);border-color:var(--bone-dim)}
+  .dbtn:disabled{opacity:.35;cursor:not-allowed}
+  .dbtn.armed{border-color:var(--blood);color:#FF8A9A}
+
+  /* hoja de datos: pausa y resumen final */
+  .sheet{width:100%;max-width:820px;display:flex;flex-direction:column;gap:11px;text-align:left}
+  .sheet .block{background:var(--panel);border:1px solid var(--edge);border-radius:3px;padding:10px 12px}
+  .sheet .bt{font-family:var(--display);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--bone-dim);margin-bottom:7px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:4px 14px}
+  .stats div{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--bone-dim);
+    border-bottom:1px solid rgba(46,39,64,.55);padding:2px 0}
+  .stats b{color:var(--bone);font-weight:600;font-variant-numeric:tabular-nums}
+  .stats div.up b{color:var(--xp)}
+  .gear{display:flex;flex-wrap:wrap;gap:6px}
+  .gear i{display:flex;align-items:center;gap:6px;font-style:normal;font-size:11.5px;
+    background:#0C0A14;border:1px solid var(--edge);border-radius:2px;padding:4px 8px 4px 4px;color:var(--bone)}
+  .gear i.max{border-color:var(--gold)}
+  .gear i .gi{width:20px;height:20px;display:block}
+  .gear i s{text-decoration:none;color:var(--bone-dim);font-variant-numeric:tabular-nums}
+  .loot{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:720px}
+  .loot i{display:flex;align-items:center;gap:7px;font-style:normal;font-size:12.5px;
+    background:var(--panel);border:1px solid var(--gold);border-radius:3px;padding:6px 11px 6px 6px;color:var(--bone)}
+  .loot i .gi{width:26px;height:26px;display:block}
   .card h3{font-family:var(--display);font-size:14.5px;margin:0;color:var(--c);letter-spacing:.02em}
   .card .lvl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-dim)}
   .card .gain{font-size:13px;color:var(--bone);font-weight:600}
@@ -181,7 +215,7 @@
 <div class="wrap">
   <header class="brand">
     <h1>Marea de Verrath</h1>
-    <span class="tag">Pixel art 16 bits · 20 armas · 18 evoluciones · 3 distritos</span>
+    <span class="tag">16 héroes · 24 armas · 23 evoluciones · 22 arcanas</span>
   </header>
 
   <div class="screen" id="screen">
@@ -231,7 +265,16 @@
       <div class="eyebrow" id="draftWho">Jugador 1</div>
       <h2 id="draftTitle">Nivel 2</h2>
       <div class="cards" id="draftCards"></div>
+      <div class="dbtns" id="draftBtns"></div>
       <div class="hint" id="draftHint">Elige una mejora</div>
+    </div>
+
+    <div class="overlay" id="chestcard" hidden>
+      <div class="eyebrow">Cofre del jefe</div>
+      <h2 id="chestTitle">Has encontrado algo</h2>
+      <div class="loot" id="chestLoot"></div>
+      <p id="chestGold"></p>
+      <button class="act" id="chestBtn">Seguir cazando</button>
     </div>
 
     <div class="overlay" id="shopcard" hidden>
@@ -239,6 +282,12 @@
       <h2>Lo que la muerte no se lleva</h2>
       <p>El oro de tus cacerías compra bendiciones permanentes, para todos los héroes y todas las partidas.</p>
       <div class="shop" id="shopGrid"></div>
+      <div class="cuenta">
+        <span class="clabel">Cazador</span>
+        <input id="hunterName" maxlength="24" placeholder="tu nombre" autocomplete="off">
+        <button class="joinbtn" id="hunterSync">Sincronizar</button>
+        <span class="hstate" id="hunterState">solo en este dispositivo</span>
+      </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         <button class="act" id="shopBack">Volver</button>
         <button class="act ghost" id="wipeBtn">Olvidar bendiciones</button>
@@ -249,6 +298,7 @@
       <div class="eyebrow" id="endEyebrow">Fin de la partida</div>
       <h2 id="endTitle">La marea te cubrió</h2>
       <p id="endText"></p>
+      <div class="sheet" id="endSheet"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         <button class="act" id="againBtn">Otra cacería</button>
         <button class="act ghost" id="toShopBtn">Santuario</button>
@@ -258,7 +308,7 @@
 
     <div class="overlay" id="pausecard" hidden>
       <h2>Pausa</h2>
-      <p>La noche espera.</p>
+      <div class="sheet" id="pauseSheet"></div>
       <button class="act" id="resumeBtn">Continuar</button>
     </div>
   </div>
@@ -279,6 +329,7 @@
     <div><span class="chip" style="background:#E5B95C"></span><b>Evoluciones</b> — arma al 8 y su pasivo al máximo. Las desata un cofre, nunca el draft, y solo después del minuto 10.</div>
     <div><span class="chip" style="background:#C2263A"></span><b>Jefes</b> — en los minutos marcados. Su cofre da 1, 3 o 5 objetos según tu suerte.</div>
     <div><span class="chip" style="background:#8FA8FF"></span><b>Uniones</b> — dos armas al máximo se funden en una sola, más terrible.</div>
+    <div><span class="chip" style="background:#C08BEF"></span><b>Arcanas</b> — en los minutos 11 y 21 eliges una carta. No sube números: cambia las reglas.</div>
     <div><span class="chip" style="background:#FFD36B"></span><b>Luces</b> — rómpelas: sueltan monedas, rosarios, reloj de arena, llamas o festín.</div>
     <div><span class="chip" style="background:#5FBF6A"></span><b>Laurel</b> — el escudo absorbe golpes enteros. El Sudario los limita a diez.</div>
     <div><span class="chip" style="background:#6E6A80"></span><b>30:00</b> — llega la Segadora. Nadie la mata; solo se sobrevive hasta ella.</div>
@@ -292,6 +343,7 @@
 <script src="world.js"></script>
 <script src="data.js"></script>
 <script src="weapons.js"></script>
+<script src="arcana.js"></script>
 <script src="engine.js"></script>
 <script src="net.js"></script>
 <script src="ui.js"></script>

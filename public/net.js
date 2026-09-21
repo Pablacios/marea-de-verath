@@ -335,6 +335,32 @@
     }catch(e){}
     if(N.transport === "ws") N.init();
   };
+  /* ---------------- progreso en el servidor ----------------
+     El mismo Worker que reparte las salas guarda el progreso, en un objeto
+     por nombre de cazador. No hay contraseña: el nombre es la llave, que
+     para un juego entre amigos basta. El servidor solo deja subir valores,
+     nunca bajarlos, así que dos dispositivos no se pisan el oro. */
+  N.httpBase = function(){
+    return N.serverBase().replace(/^wss:/,"https:").replace(/^ws:/,"http:");
+  };
+  N.perfilDisponible = function(){ return N.transport === "ws"; };
+  N.cargarPerfil = function(nombre, cb){
+    if(!N.perfilDisponible()) return cb(null, "local");
+    fetch(N.httpBase() + "/perfil?c=" + encodeURIComponent(nombre))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){ cb(j, j ? null : "error"); })
+      .catch(function(){ cb(null, "error"); });
+  };
+  N.guardarPerfil = function(nombre, data, cb){
+    if(!N.perfilDisponible()) return cb && cb(null, "local");
+    fetch(N.httpBase() + "/perfil?c=" + encodeURIComponent(nombre), {
+      method:"PUT", headers:{"content-type":"application/json"},
+      body:JSON.stringify(data)
+    }).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){ cb && cb(j, j ? null : "error"); })
+      .catch(function(){ cb && cb(null, "error"); });
+  };
+
   N.serverLabel = function(){
     return N.serverBase().replace(/^wss?:\/\//,"");
   };

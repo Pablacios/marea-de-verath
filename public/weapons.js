@@ -440,6 +440,90 @@
     }
   };
 
+  /* ---------------- 21. Ala Fantasma: suelta plumas al caminar ---------------- */
+  W.pluma = {
+    name:"Ala Fantasma", glyph:"➶", ico:"pluma", color:"#B8C2D8", spr:null,
+    desc:"Mientras caminas vas dejando plumas que hieren a quien las pisa.",
+    base:{cd:1.0, dmg:18, count:1, area:1, life:2.2},
+    ups:[U("+1 pluma",{count:1}), U("+8 de daño",{dmg:8}), U("−0,2 s de recarga",{cd:-.2}),
+         U("+1 pluma",{count:1}), U("+30% de área",{area:.3}), U("+10 de daño",{dmg:10}),
+         U("+1 pluma",{count:1})],
+    fire:function(p,w,s){
+      if(!p.moving) return;
+      for(var i=0;i<s.count;i++){
+        var a = Math.atan2(-p.aimy, -p.aimx) + A.rf(-.5,.5);
+        var d = 26 + i*18;
+        A.area({x:p.x+Math.cos(a)*d, y:p.y+Math.sin(a)*d, w:40*s.area, h:40*s.area,
+          kind:"pool", life:s.life*s.duration, color:w.def.color, dmg:s.dmg, owner:p});
+      }
+      A.beep(760,.05,"sine",.02);
+    }
+  };
+
+  /* ---------------- 22. Viento Sacro: tajo de aire que atraviesa ---------------- */
+  W.viento = {
+    name:"Viento Sacro", glyph:"⌁", ico:"viento", color:"#DCE8FF", spr:null,
+    desc:"Un tajo de aire hacia donde miras. Atraviesa y corta fino.",
+    base:{cd:1.3, dmg:26, count:1, area:1, range:150, critChance:.18},
+    ups:[U("+1 tajo",{count:1}), U("+12 de daño",{dmg:12}), U("+25% de alcance",{range:38}),
+         U("−0,2 s de recarga",{cd:-.2}), U("+14 de daño",{dmg:14}),
+         U("+25% de área",{area:.25}), U("+1 tajo",{count:1})],
+    fire:function(p,w,s){
+      var base = Math.atan2(p.aimy, p.aimx);
+      for(var i=0;i<s.count;i++){
+        var ang = base + (i - (s.count-1)/2)*0.34;
+        A.area({x:p.x+Math.cos(ang)*s.range*.45, y:p.y+Math.sin(ang)*s.range*.45,
+          w:s.range*s.area, h:38*s.area, kind:"slash", ang:ang, life:.16,
+          color:w.def.color, dmg:s.dmg, owner:p, once:true,
+          critChance:s.critChance, blast:w.def.windBlast});
+      }
+      A.beep(880,.06,"sine",.03);
+    }
+  };
+
+  /* ---------------- 23. Brazalete: cadena de tres formas ---------------- */
+  W.brazalete = {
+    name:"Brazalete", glyph:"◌", ico:"brazalete", color:"#C08BEF", spr:"b_runa",
+    desc:"Una cuenta que busca sola. Al dominarlo se parte en dos, y luego en tres.",
+    base:{cd:1.5, dmg:22, count:1, speed:300, pierce:1, area:1},
+    ups:[U("+9 de daño",{dmg:9}), U("−0,15 s de recarga",{cd:-.15}), U("+11 de daño",{dmg:11}),
+         U("atraviesa 1 más",{pierce:1}), U("−0,15 s de recarga",{cd:-.15}),
+         U("+13 de daño",{dmg:13}), U("+30% de área",{area:.3})],
+    fire:function(p,w,s){
+      var n = Math.max(1, s.count);
+      for(var i=0;i<n;i++){
+        var f = A.nearest(p.x, p.y, 560);
+        var ang = f ? Math.atan2(f.y-p.y, f.x-p.x) + (i?A.rf(-.3,.3):0) : A.rf(0,6.283);
+        A.shoot({x:p.x,y:p.y,ang:ang,sp:s.speed,dmg:s.dmg,pierce:s.pierce,
+          life:2.4*s.duration,r:8*s.area,spr:w.def.spr,owner:p,rot:true});
+      }
+      A.beep(620,.05,"triangle",.025);
+    }
+  };
+
+  /* ---------------- 24. Espada de la Victoria: corta y devuelve sangre ---------------- */
+  W.victoria = {
+    name:"Espada de la Victoria", glyph:"†", ico:"victoria", color:"#FFF3D0", spr:null,
+    desc:"Barre en abanico delante de ti. Cuanto peor estás, más corta.",
+    base:{cd:1.5, dmg:30, count:1, area:1, range:120, critChance:.25},
+    ups:[U("+1 barrido",{count:1}), U("+14 de daño",{dmg:14}), U("+25% de área",{area:.25}),
+         U("−0,2 s de recarga",{cd:-.2}), U("+16 de daño",{dmg:16}),
+         U("+25% de alcance",{range:30}), U("+1 barrido",{count:1})],
+    fire:function(p,w,s){
+      var falta = 1 - (p.hp/p.maxhp);
+      var dmg = s.dmg * (1 + falta*0.9);
+      var base = Math.atan2(p.aimy, p.aimx);
+      for(var i=0;i<s.count;i++){
+        var ang = base + (i - (s.count-1)/2)*0.6;
+        A.area({x:p.x+Math.cos(ang)*s.range*.4, y:p.y+Math.sin(ang)*s.range*.4,
+          w:s.range*s.area, h:46*s.area, kind:"slash", ang:ang, life:.18,
+          color:w.def.color, dmg:dmg, owner:p, once:true,
+          critChance:s.critChance, lifesteal:w.def.sun});
+      }
+      A.beep(420,.08,"square",.03);
+    }
+  };
+
   V.WEAPON_KEYS = Object.keys(W);
 
   /* ================= EVOLUCIONES ================= */
@@ -510,6 +594,21 @@
     sudario: evo(W.laurel, {name:"Sudario Carmesí", color:"#C2263A", shroud:true,
       desc:"Nada te quita más de diez de vida por golpe, y devuelve el daño.",
       base:{cd:3.0, dmg:0, count:1, area:1, charges:5}}),
+    valquiria: evo(W.pluma, {name:"La Valquiria", color:"#FFF3D0",
+      desc:"Las plumas ya no caen: giran contigo y cortan todo lo que rozan.",
+      base:{cd:.5, dmg:40, count:4, area:1.8, life:3.0}}),
+    fuwala: evo(W.viento, {name:"Fuwalafuwaloo", color:"#FF6A8A", union:true, windBlast:1,
+      desc:"El viento y la sangre juntos: cada corte crítico estalla.",
+      base:{cd:.7, dmg:58, count:3, area:1.6, range:190, critChance:.5}}),
+    bibrazalete: evo(W.brazalete, {name:"Bi-Brazalete", color:"#D8A8FF",
+      desc:"La cuenta se parte en dos y busca por separado.",
+      base:{cd:1.1, dmg:34, count:2, speed:340, pierce:2, area:1.2}}),
+    tribrazalete: evo(W.brazalete, {name:"Tri-Brazalete", color:"#FFE9B0", from:"bibrazalete",
+      desc:"Tres cuentas, tres rumbos, ningún descanso.",
+      base:{cd:.8, dmg:46, count:3, speed:380, pierce:3, area:1.4}}),
+    solar: evo(W.victoria, {name:"Solución Solar", color:"#FFD36B", sun:true,
+      desc:"El filo arde y te devuelve parte de lo que siega.",
+      base:{cd:.9, dmg:70, count:3, area:1.6, range:170, critChance:.45}}),
     /* uniones */
     vandalier: evo(W.peachone, {name:"Vandalier", color:"#FFE9B0", spr:"b_pajaro", union:true,
       desc:"Las dos alas, blanca y negra, cazando juntas.",
@@ -543,8 +642,13 @@
     {from:"pentagrama",  passive:"corona",     to:"lunaesplendida"},
     {from:"gatos",       passive:"mascara",    to:"hambre"},
     {from:"cancion",     passive:"calavera",   to:"mannajja"},
-    {from:"lanceta",     passive:"alas",       to:"corredor"},
-    {from:"laurel",      passive:"tiramisu",   to:"sudario"},
+    {from:"pluma",       passive:"alas",       to:"valquiria"},
+    {from:"brazalete",                         to:"bibrazalete"},
+    {from:"bibrazalete",                       to:"tribrazalete"},
+    {from:"victoria",    passive:"torrona",    to:"solar"},
+    {from:"lanceta",     passives:["plata","oro"], to:"corredor"},
+    {from:"laurel",      passives:["metaizq","metader"], to:"sudario"},
+    {from:"viento",      with:"sangre",        to:"fuwala"},
     {from:"peachone",    with:"ebano",         to:"vandalier"},
     {from:"pistola",     with:"escopeta",      passive:"tiramisu", to:"iragemela"}
   ];

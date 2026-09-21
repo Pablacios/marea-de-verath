@@ -30,10 +30,52 @@
   function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
   function ri(a,b){ return a+Math.floor(Math.random()*(b-a+1)); }
 
-  /* ---------------- persistencia ---------------- */
+  /* ---------------- persistencia ----------------
+     Primero en el navegador, siempre. Si además hay nombre de cazador y el
+     juego se sirve desde tu dominio, se empuja al servidor para que el
+     progreso te siga a cualquier dispositivo. */
+  var cazador = "", syncT = 0;
   function saveMeta(){
     try{ localStorage.setItem("verrath.v2", JSON.stringify({bank:bank, bless:V.meta})); }catch(e){}
+    pushPerfil();
   }
+  function pushPerfil(){
+    if(!cazador || !V.net || !V.net.perfilDisponible()) return;
+    clearTimeout(syncT);
+    syncT = setTimeout(function(){
+      V.net.guardarPerfil(cazador, {bank:bank, bless:V.meta}, function(j){
+        if(j) hunterState("guardado como " + cazador);
+      });
+    }, 900);
+  }
+  function hunterState(t){
+    var el = $("hunterState");
+    if(el) el.textContent = t;
+  }
+  function pullPerfil(nombre){
+    cazador = nombre;
+    try{ localStorage.setItem("verrath.cazador", nombre); }catch(e){}
+    if(!nombre){ hunterState("solo en este dispositivo"); return; }
+    if(!V.net || !V.net.perfilDisponible()){
+      hunterState("sin servidor: se guarda solo aquí");
+      return;
+    }
+    hunterState("buscando…");
+    V.net.cargarPerfil(nombre, function(j, err){
+      if(err || !j){ hunterState("no se pudo leer; sigue en local"); return; }
+      if(!j.nuevo){
+        // se toma siempre lo mayor de cada cosa: nada se pierde
+        bank = Math.max(bank, j.bank||0);
+        var b = j.bless || {};
+        for(var k in b) V.meta[k] = Math.max(V.meta[k]||0, b[k]||0);
+        try{ localStorage.setItem("verrath.v2", JSON.stringify({bank:bank, bless:V.meta})); }catch(e){}
+        renderShop(); U.sync();
+      }
+      hunterState("sincronizado como " + nombre);
+      pushPerfil();
+    });
+  }
+  U.setCazador = pullPerfil;
   function loadMeta(){
     try{
       var raw = localStorage.getItem("verrath.v2");
@@ -81,26 +123,117 @@
   };
 
   /* ---------------- HUD ---------------- */
+  /* ---------------- HUD dentro de la pantalla ----------------
+     Distribución del original: barra de experiencia arriba del todo,
+     nivel a la izquierda, reloj en el centro, oro y bajas a la derecha, y
+     debajo el inventario: fila de armas y fila de pasivos, con su nivel. */
+  function localPlayer(ps){
+    var i;
+    if(V.net && V.net.online && V.net.me)
+      for(i=0;i<ps.length;i++) if(ps[i].netPeer === V.net.me) return ps[i];
+    for(i=0;i<ps.length;i++) if(ps[i].input) return ps[i];
+    return ps[0];
+  }
+  U.localPlayer = localPlayer;
+
+  function slotBox(ctx, x, y, S, on){
+    ctx.fillStyle = "rgba(9,7,17,.78)";
+    ctx.fillRect(x, y, S, S);
+    ctx.strokeStyle = on ? "rgba(140,120,80,.85)" : "rgba(46,39,64,.85)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x+.5, y+.5, S-1, S-1);
+  }
+  function slotIcon(ctx, key, evo, x, y, S){
+    var ic = V.iconCanvas ? V.iconCanvas(key, evo) : null;
+    if(!ic) return;
+    var pad = Math.max(2, Math.round(S*0.12));
+    var box = S - pad*2;
+    var k = Math.min(box/ic.width, box/ic.height);
+    var dw = Math.max(1, Math.round(ic.width*k)), dh = Math.max(1, Math.round(ic.height*k));
+    ctx.drawImage(ic, Math.round(x+(S-dw)/2), Math.round(y+(S-dh)/2), dw, dh);
+  }
+  function slotLevel(ctx, txt, x, y, S, dpr, color){
+    ctx.font = "700 " + Math.round(10.5*dpr) + "px 'Barlow Semi Condensed',Arial,sans-serif";
+    ctx.textAlign = "right";
+    var tw = ctx.measureText(txt).width;
+    ctx.fillStyle = "rgba(7,6,14,.9)";
+    ctx.fillRect(x+S-tw-5, y+S-Math.round(11*dpr), tw+5, Math.round(11*dpr));
+    ctx.fillStyle = color || "#E5B95C";
+    ctx.fillText(txt, x+S-2, y+S-Math.round(2.6*dpr));
+  }
+
   U.drawHud = function(ctx, w, h, info){
     if(G.state.demo || !info.players.length) return;
     var dpr = Math.min(window.devicePixelRatio||1, 2);
-    var lead = info.players[0];
-    for(var i=1;i<info.players.length;i++) if(info.players[i].lvl>lead.lvl) lead=info.players[i];
+    var me = localPlayer(info.players);
     var bh = 10*dpr;
+
+    // barra de experiencia del jugador local, a lo ancho de la pantalla
     ctx.fillStyle="#0A0812"; ctx.fillRect(0,0,w,bh+3);
     ctx.fillStyle="#1C2D3A"; ctx.fillRect(0,0,w,bh);
-    ctx.fillStyle="#46E0C8"; ctx.fillRect(0,0,Math.round(w*clamp(lead.xp/lead.next,0,1)),bh);
+    ctx.fillStyle="#46E0C8"; ctx.fillRect(0,0,Math.round(w*clamp(me.xp/me.next,0,1)),bh);
+
     ctx.font="700 "+Math.round(13*dpr)+"px 'Barlow Semi Condensed',Arial,sans-serif";
     ctx.textAlign="left"; ctx.fillStyle="#E4E7F0";
-    ctx.fillText("NV "+lead.lvl, 10*dpr, bh+18*dpr);
+    ctx.fillText("NV "+me.lvl, 10*dpr, bh+18*dpr);
+
     ctx.textAlign="center";
     ctx.font="700 "+Math.round(25*dpr)+"px 'Barlow Semi Condensed',Arial,sans-serif";
     ctx.fillStyle = (V.RUN_LENGTH-info.runT) < 60 ? "#C2263A" : "#E4E7F0";
     ctx.fillText(fmt(info.runT), w/2, bh+27*dpr);
+
     ctx.textAlign="right";
     ctx.font="700 "+Math.round(13*dpr)+"px 'Barlow Semi Condensed',Arial,sans-serif";
     ctx.fillStyle="#E5B95C";
     ctx.fillText(info.runGold+" oro", w-10*dpr, bh+18*dpr);
+    ctx.fillStyle="#A9B6D6";
+    ctx.fillText(G.kills()+" bajas", w-10*dpr, bh+34*dpr);
+
+    // inventario: seis huecos de armas arriba, seis de pasivos debajo
+    var S = Math.round(28*dpr), gap = Math.round(3*dpr);
+    var x0 = Math.round(8*dpr), y0 = bh + Math.round(26*dpr);
+    var r, c, x, y;
+    for(r=0;r<2;r++) for(c=0;c<6;c++){
+      x = x0 + c*(S+gap); y = y0 + r*(S+gap);
+      slotBox(ctx, x, y, S, false);
+    }
+    for(c=0;c<me.weapons.length && c<6;c++){
+      var wp = me.weapons[c];
+      x = x0 + c*(S+gap); y = y0;
+      slotBox(ctx, x, y, S, !!wp.def.evo);
+      slotIcon(ctx, wp.def.ico, wp.def.evo, x, y, S);
+      slotLevel(ctx, wp.def.evo ? "EVO" : String(wp.lvl), x, y, S, dpr,
+                wp.def.evo ? "#FFD36B" : (wp.lvl>=8 ? "#FFF4D6" : "#E5B95C"));
+    }
+    var pk = Object.keys(me.passives);
+    for(c=0;c<pk.length && c<6;c++){
+      var q = V.PASSIVES[pk[c]], lv = me.passives[pk[c]];
+      x = x0 + c*(S+gap); y = y0 + S + gap;
+      slotBox(ctx, x, y, S, lv >= q.max);
+      slotIcon(ctx, q.ico, false, x, y, S);
+      slotLevel(ctx, String(lv), x, y, S, dpr, lv>=q.max ? "#FFF4D6" : "#C9CEDC");
+    }
+
+    // efectos en curso: solo aparecen cuando están activos
+    var badges = [];
+    if(me.flame > 0) badges.push({t:"Llamas "+Math.ceil(me.flame)+"s", c:"#FF8A3C"});
+    if(me.shield && me.shield.ch > 0) badges.push({t:"Escudo x"+me.shield.ch, c:"#5FBF6A"});
+    var revs = (me.st.revival||0) + ((V.meta && V.meta.alma)?1:0) - me.revivesUsed;
+    if(revs > 0) badges.push({t:"Revivir x"+revs, c:"#FFD36B"});
+    if(badges.length){
+      ctx.textAlign = "left";
+      ctx.font = "700 " + Math.round(11*dpr) + "px 'Barlow Semi Condensed',Arial,sans-serif";
+      var by = y0 + (S+gap)*2 + Math.round(12*dpr);
+      for(var bi=0;bi<badges.length;bi++){
+        ctx.fillStyle = "rgba(7,6,14,.75)";
+        var bw = ctx.measureText(badges[bi].t).width + 10;
+        ctx.fillRect(x0, by-Math.round(10*dpr), bw, Math.round(14*dpr));
+        ctx.fillStyle = badges[bi].c;
+        ctx.fillText(badges[bi].t, x0+5, by);
+        by += Math.round(17*dpr);
+      }
+    }
+
     if(info.msgTime>0){
       ctx.globalAlpha=clamp(info.msgTime,0,1);
       ctx.font="700 "+Math.round(15*dpr)+"px 'Barlow Semi Condensed',Arial,sans-serif";
@@ -166,9 +299,11 @@
   };
 
   /* ---------------- draft ---------------- */
+  var arcQueue = [];
   U.queueDraft = function(p){ draftQueue.push(p); };
+  U.queueArcana = function(p){ arcQueue.push(p); };
   U.maybeOpenDraft = function(){
-    if(draftQueue.length && !G.state.drafting){ confirmPrev = true; openDraft(); }
+    if((arcQueue.length || draftQueue.length) && !G.state.drafting){ confirmPrev = true; openDraft(); }
   };
   function evoReady(p, rule){
     var a = G.ownedWeapon(p, rule.from);
@@ -176,6 +311,13 @@
     if(rule.with){
       var b = G.ownedWeapon(p, rule.with);
       if(!b || b.lvl < 8) return false;
+    }
+    // algunas evoluciones piden dos objetos, y los dos al máximo
+    if(rule.passives){
+      for(var pi=0; pi<rule.passives.length; pi++){
+        var pk2 = rule.passives[pi];
+        if((p.passives[pk2]||0) < V.PASSIVES[pk2].max) return false;
+      }
     }
     // el original exige el pasivo al máximo, no a un nivel intermedio
     if(rule.passive){
@@ -195,12 +337,14 @@
 
     for(i=0;i<V.WEAPON_KEYS.length;i++){
       var k = V.WEAPON_KEYS[i], ow = G.ownedWeapon(p,k);
+      if(p.banned && p.banned["w:"+k]) continue;
       if(ow){ if(ow.lvl < 8 && !ow.def.evo) owned.push({type:"weapon",key:k,lvl:ow.lvl+1}); }
-      else if(p.weapons.length < 6) fresh.push({type:"weapon",key:k,lvl:1});
+      else if(p.weapons.length < (V.arc ? V.arc.weaponSlots(p) : 6)) fresh.push({type:"weapon",key:k,lvl:1});
     }
     var nPas = Object.keys(p.passives).length;
     for(i=0;i<V.PASSIVE_KEYS.length;i++){
       var pk = V.PASSIVE_KEYS[i], cur = p.passives[pk]||0;
+      if(p.banned && p.banned["p:"+pk]) continue;
       if(cur >= V.PASSIVES[pk].max) continue;
       if(cur > 0) owned.push({type:"passive",key:pk,lvl:cur+1});
       else if(nPas < 6) fresh.push({type:"passive",key:pk,lvl:1});
@@ -222,9 +366,14 @@
     for(var i=a.length-1;i>0;i--){ var j=ri(0,i), t=a[i]; a[i]=a[j]; a[j]=t; }
   }
   function openDraft(){
-    if(!draftQueue.length){ G.state.drafting=false; hide("draft"); lastT=performance.now(); return; }
-    var p=draftQueue[0];
-    draftOwner=p; draftOpts=buildOptions(p); draftIdx=0;
+    if(!arcQueue.length && !draftQueue.length){ G.state.drafting=false; hide("draft"); lastT=performance.now(); return; }
+    var esArcana = arcQueue.length > 0;
+    var p = esArcana ? arcQueue[0] : draftQueue[0];
+    draftOwner = p;
+    draftIdx = 0;
+    draftOpts = esArcana
+      ? V.arc.offer(p).map(function(c){ return {type:"arcana", card:c}; })
+      : buildOptions(p);
     G.state.drafting=true;
     // en línea: si la carta es de otro dispositivo, se la mandamos y esperamos
     if(V.net && V.net.online && V.net.isHost && p.netPeer && p.netPeer !== V.net.me){
@@ -237,12 +386,15 @@
       return;
     }
     $("draftWho").textContent = (G.players.length>1 ? "Jugador "+(p.slot+1)+" · " : "") + V.HEROES[p.hero].name;
-    $("draftTitle").textContent = "Nivel "+p.lvl;
+    $("draftTitle").textContent = esArcana ? "Arcana" : ("Nivel "+p.lvl);
     renderDraft();
     show("draft");
   }
   function cardInfo(o){
     if(o.type==="remote") return o.info;
+    if(o.type==="arcana")
+      return {n:o.card.name, ico:"arcana", c:"#C08BEF", l:"Arcana "+o.card.r,
+        gain:"Cambia las reglas", t:o.card.text, evo:true};
     if(o.type==="evo"){
       var d=V.EVOLVED[o.rule.to];
       var need = o.rule.with ? (V.WEAPONS[o.rule.from].name+" + "+V.WEAPONS[o.rule.with].name) : V.WEAPONS[o.rule.from].name;
@@ -279,12 +431,59 @@
         wrap.appendChild(el);
       })(i);
     }
-    $("draftHint").textContent = G.players.length>1
-      ? "Elige con tu propio mando o teclado; el resto espera"
-      : "← → para moverte · Espacio para elegir · o haz clic";
+    renderDraftButtons();
+    $("draftHint").textContent = banishArmed
+      ? "Elige la carta que quieres desterrar: no volverá en toda la cacería"
+      : (G.players.length>1
+          ? "Elige con tu propio mando o teclado; el resto espera"
+          : "← → para moverte · Espacio para elegir · o haz clic");
+  }
+
+  /* Relanzar, descartar y desterrar: los tres botones del original. Las
+     cargas se compran en el Santuario y duran una cacería. */
+  var banishArmed = false;
+  function renderDraftButtons(){
+    var box = $("draftBtns");
+    if(!box) return;
+    var p = draftOwner;
+    box.innerHTML = "";
+    if(!p || (V.net && V.net.online && p.netPeer && p.netPeer !== V.net.me)) return;
+    if(draftOpts.length && draftOpts[0].type === "arcana") return;
+    var defs = [
+      {k:"rerolls",  t:"Relanzar",  on:function(){ draftOpts = buildOptions(p); draftIdx = 0; p.rerolls--; banishArmed=false; renderDraft(); }},
+      {k:"skips",    t:"Descartar", on:function(){ p.skips--; banishArmed=false; applyPick(p, {type:"skip"}); }},
+      {k:"banishes", t:"Desterrar", on:function(){ banishArmed = !banishArmed; renderDraft(); }}
+    ];
+    for(var i=0;i<defs.length;i++){
+      (function(d){
+        var n = p[d.k] || 0;
+        var el = document.createElement("button");
+        el.type = "button";
+        el.className = "dbtn" + (d.k==="banishes" && banishArmed ? " armed" : "");
+        el.disabled = n <= 0;
+        el.textContent = d.t + " (" + n + ")";
+        el.onclick = function(){ if((p[d.k]||0) > 0) d.on(); };
+        box.appendChild(el);
+      })(defs[i]);
+    }
+  }
+  function banishOption(p, o){
+    if(!o) return;
+    if(o.type === "weapon") p.banned["w:"+o.key] = 1;
+    else if(o.type === "passive") p.banned["p:"+o.key] = 1;
+    else return;
+    p.banishes--;
+    banishArmed = false;
+    draftOpts = buildOptions(p);
+    draftIdx = 0;
+    renderDraft();
   }
   function pick(idx){
     if(!G.state.drafting) return;
+    if(banishArmed && draftOwner && (draftOwner.banishes||0) > 0){
+      banishOption(draftOwner, draftOpts[idx]);
+      return;
+    }
     if(V.net && V.net.online && !V.net.isHost){
       // el invitado no aplica nada: se lo pide al anfitrión
       V.net.emitPick(idx);
@@ -296,6 +495,16 @@
   }
   function applyPick(p, o){
     if(!p || !o) return;
+    if(o.type==="arcana"){
+      V.arc.give(p, o.card.k);
+      G.say("Arcana " + o.card.r + ": " + o.card.name);
+      banishArmed = false;
+      arcQueue.shift();
+      U.party();
+      if(arcQueue.length || draftQueue.length) openDraft();
+      else { G.state.drafting=false; hide("draft"); lastT=performance.now(); }
+      return;
+    }
     if(o.type==="evo"){
       G.addWeapon(p, o.rule.to, o.rule.from, o.rule.with);
       G.say("¡"+V.EVOLVED[o.rule.to].name+"!");
@@ -305,9 +514,12 @@
       if(w) w.lvl++; else G.addWeapon(p,o.key);
     } else if(o.type==="passive"){
       G.addPassive(p,o.key);
+    } else if(o.type==="skip"){
+      G.say("Carta descartada.");
     } else if(o.type==="heal"){
       p.hp=Math.min(p.maxhp,p.hp+30);
     } else G.addGold(150);
+    banishArmed = false;
     draftQueue.shift();
     U.party();
     if(draftQueue.length) openDraft();
@@ -365,6 +577,7 @@
     if(Math.random() < C.five.p*luck)       tier = C.five;
     else if(Math.random() < C.three.p*luck) tier = C.three;
     else                                    tier = C.one;
+    if(V.arc && V.arc.chestMin(p) >= 3 && tier === C.one) tier = C.three;
 
     var gold = Math.round(ri(tier.gold[0], tier.gold[1]) * (p.st.greed||1));
     G.addGold(gold);
@@ -395,12 +608,118 @@
       if(!cand.length){ G.addGold(Math.round(100*(p.st.greed||1))); continue; }
 
       var c = cand[ri(0,cand.length-1)];
-      if(c.w){ c.w.lvl++; dicho.push(c.w.def.name + " nv " + c.w.lvl); }
-      else { G.addPassive(p, c.q); dicho.push(V.PASSIVES[c.q].name + " nv " + p.passives[c.q]); }
+      if(c.w){ c.w.lvl++; dicho.push({ico:c.w.def.ico, evo:c.w.def.evo, t:c.w.def.name+" nv "+c.w.lvl}); }
+      else { G.addPassive(p, c.q); dicho.push({ico:V.PASSIVES[c.q].ico, t:V.PASSIVES[c.q].name+" nv "+p.passives[c.q]}); }
     }
 
-    G.say("Cofre de " + tier.n + ": " + (dicho.join(" · ") || "solo oro") + " · +" + gold + " de oro");
+    showChest(p, tier, gold, dicho);
     U.party();
+  };
+
+  /* El cofre se abre en pantalla, como en el original: se ve qué ha caído.
+     En solitario pausa la cacería; en línea no, porque pararía a todos. */
+  function showChest(p, tier, gold, loot){
+    var solo = !(V.net && V.net.online);
+    if(V.net && V.net.online && p.netPeer && p.netPeer !== V.net.me){
+      G.say("Cofre para " + V.HEROES[p.hero].name);
+      return;
+    }
+    var html = "";
+    for(var i=0;i<loot.length;i++)
+      html += '<i>' + V.iconHtml(loot[i].ico, "gi", loot[i].evo) + loot[i].t + '</i>';
+    if(!html) html = '<i>Solo monedas</i>';
+    $("chestTitle").textContent = tier.n === 5 ? "¡Cofre de cinco!"
+      : (tier.n === 3 ? "Cofre de tres" : "Cofre");
+    $("chestLoot").innerHTML = html;
+    $("chestGold").textContent = "+" + gold + " de oro";
+    show("chestcard");
+    if(solo){ G.state.paused = true; }
+    else {
+      clearTimeout(chestTimer);
+      chestTimer = setTimeout(closeChest, 4200);
+    }
+  }
+  var chestTimer = 0;
+  function closeChest(){
+    clearTimeout(chestTimer);
+    hide("chestcard");
+    if(G.state.paused){ G.state.paused = false; lastT = performance.now(); }
+  }
+  U.closeChest = closeChest;
+
+  /* ---------------- hoja de estado ----------------
+     La misma que enseña el original al pausar: todas las estadísticas con
+     su valor actual, y el inventario con los niveles. */
+  function pct(v){ return Math.round(v*100) + "%"; }
+  function statRows(p){
+    var st = p.st, base = {might:1,area:1,speed:1,duration:1,cooldown:1,moveSpeed:1,
+      magnet:1,luck:1,growth:1,greed:1,curse:1,amount:0,armor:0,recovery:0,revival:0};
+    var rows = [
+      ["Vida",           Math.round(p.hp)+" / "+Math.round(p.maxhp), p.maxhp>110],
+      ["Daño",           pct(st.might),      st.might>base.might],
+      ["Área",           pct(st.area),       st.area>base.area],
+      ["Vel. proyectil", pct(st.speed),      st.speed>base.speed],
+      ["Duración",       pct(st.duration),   st.duration>base.duration],
+      ["Recarga",        pct(st.cooldown),   st.cooldown<base.cooldown],
+      ["Proyectiles",    "+"+st.amount,      st.amount>0],
+      ["Armadura",       String(st.armor),   st.armor>0],
+      ["Regeneración",   (st.recovery||0).toFixed(2)+"/s", st.recovery>0],
+      ["Velocidad",      pct(st.moveSpeed),  st.moveSpeed>base.moveSpeed],
+      ["Imán",           pct(st.magnet),     st.magnet>base.magnet],
+      ["Suerte",         pct(st.luck),       st.luck>base.luck],
+      ["Experiencia",    pct(st.growth),     st.growth>base.growth],
+      ["Oro",            pct(st.greed),      st.greed>base.greed],
+      ["Maldición",      pct(st.curse),      st.curse>base.curse],
+      ["Revividas",      String((st.revival||0)+((V.meta&&V.meta.alma)?1:0)-p.revivesUsed), true]
+    ];
+    var out = "";
+    for(var i=0;i<rows.length;i++)
+      out += '<div class="'+(rows[i][2]?"up":"")+'"><span>'+rows[i][0]+'</span><b>'+rows[i][1]+'</b></div>';
+    return out;
+  }
+  function gearRows(p){
+    var out = "", i;
+    for(i=0;i<p.weapons.length;i++){
+      var w = p.weapons[i];
+      out += '<i class="'+(w.def.evo||w.lvl>=8?"max":"")+'">'+
+        V.iconHtml(w.def.ico, "gi", w.def.evo)+w.def.name+
+        ' <s>'+(w.def.evo?"evolucionada":"nv "+w.lvl)+'</s></i>';
+    }
+    for(var k in p.passives){
+      var q = V.PASSIVES[k], lv = p.passives[k];
+      out += '<i class="'+(lv>=q.max?"max":"")+'">'+
+        V.iconHtml(q.ico, "gi")+q.name+' <s>nv '+lv+'</s></i>';
+    }
+    return out || '<i>Sin nada todavía</i>';
+  }
+  function arcRows(p){
+    var l = V.arc ? V.arc.list(p) : [];
+    if(!l.length) return "";
+    var out = "";
+    for(var i=0;i<l.length;i++)
+      out += '<i class="max">'+V.iconHtml("arcana","gi",true)+l[i].name+' <s>'+l[i].r+'</s></i>';
+    return '<div class="block"><div class="bt">Arcanas</div><div class="gear">'+out+'</div></div>';
+  }
+  function sheetHtml(p, extra){
+    return (extra||"") + arcRows(p) +
+      '<div class="block"><div class="bt">Arsenal</div><div class="gear">'+gearRows(p)+'</div></div>' +
+      '<div class="block"><div class="bt">Estadísticas</div><div class="stats">'+statRows(p)+'</div></div>';
+  }
+  U.pauseSheet = function(){
+    var box = $("pauseSheet");
+    if(!box || !G.players.length) return;
+    var p = localPlayer(G.players);
+    var head = '<div class="block"><div class="bt">Cacería</div><div class="stats">'+
+      '<div><span>Tiempo</span><b>'+fmt(G.time())+'</b></div>'+
+      '<div><span>Nivel</span><b>'+p.lvl+'</b></div>'+
+      '<div><span>Bajas</span><b>'+G.kills()+'</b></div>'+
+      '<div><span>Oro</span><b>'+G.runGold()+'</b></div>'+
+      '<div><span>Relanzar</span><b>'+(p.rerolls||0)+'</b></div>'+
+      '<div><span>Descartar</span><b>'+(p.skips||0)+'</b></div>'+
+      '<div><span>Desterrar</span><b>'+(p.banishes||0)+'</b></div>'+
+      '<div><span>En pantalla</span><b>'+G.foes.length+'</b></div>'+
+      '</div></div>';
+    box.innerHTML = sheetHtml(p, head);
   };
 
   /* ---------------- fin de partida ---------------- */
@@ -414,8 +733,20 @@
     $("endTitle").textContent = won
       ? "Habéis sobrevivido a la noche"
       : (G.players.length>1 ? "La marea os cubrió" : "La marea te cubrió");
-    $("endText").textContent = "Aguantasteis "+fmt(G.time())+" en "+G.get().stage.name+" · "+
-      G.kills()+" bajas · "+G.runGold()+" de oro a las arcas ("+bank+" en total).";
+    $("endText").textContent = won
+      ? "La noche se retira en " + G.get().stage.name + "."
+      : "La noche os ganó en " + G.get().stage.name + ".";
+    if(G.players.length){
+      var pe = localPlayer(G.players);
+      var head = '<div class="block"><div class="bt">Resumen</div><div class="stats">'+
+        '<div><span>Aguantado</span><b>'+fmt(G.time())+'</b></div>'+
+        '<div><span>Nivel</span><b>'+pe.lvl+'</b></div>'+
+        '<div><span>Bajas</span><b>'+G.kills()+'</b></div>'+
+        '<div><span>Oro</span><b>'+G.runGold()+'</b></div>'+
+        '<div><span>Arcas</span><b>'+bank+'</b></div>'+
+        '</div></div>';
+      $("endSheet").innerHTML = sheetHtml(pe, head);
+    }
     show("endcard");
     U.sync();
     if(V.net) V.net.goOnline(false);
@@ -551,7 +882,7 @@
   function startRun(){
     if(!slots.some(function(s){return s.joined;})) slots[0].joined=true;
     draftQueue=[]; G.state.drafting=false;
-    hide("menu"); hide("endcard"); hide("shopcard"); hide("pausecard"); hide("draft");
+    hide("menu"); hide("endcard"); hide("shopcard"); hide("pausecard"); hide("draft"); hide("chestcard");
     G.startRun(slots, stageKey);
     U.party();
     lastT=performance.now();
@@ -564,13 +895,29 @@
   $("shopBack").addEventListener("click", function(){ hide("shopcard"); renderSlots(); renderStages(); show("menu"); });
   $("wipeBtn").addEventListener("click", function(){ V.meta={}; saveMeta(); renderShop(); U.sync(); });
   $("resumeBtn").addEventListener("click", function(){ G.state.paused=false; hide("pausecard"); lastT=performance.now(); });
+  $("chestBtn").addEventListener("click", closeChest);
+  (function(){
+    var inp = $("hunterName");
+    if(!inp) return;
+    try{ inp.value = localStorage.getItem("verrath.cazador") || ""; }catch(e){}
+    if(inp.value) pullPerfil(inp.value.trim().toLowerCase());
+    $("hunterSync").addEventListener("click", function(){
+      var v = (inp.value||"").trim().toLowerCase();
+      if(v && !/^[a-z0-9 _-]{2,24}$/.test(v)){
+        hunterState("entre 2 y 24 letras o números");
+        return;
+      }
+      pullPerfil(v);
+    });
+  })();
 
   window.addEventListener("keydown", function(ev){
     keys[ev.key]=true;
     if(ev.key===" "||ev.key.indexOf("Arrow")===0) ev.preventDefault();
     if((ev.key==="p"||ev.key==="P") && G.state.running && !G.state.drafting){
       G.state.paused=!G.state.paused;
-      if(G.state.paused) show("pausecard"); else { hide("pausecard"); lastT=performance.now(); }
+      if(G.state.paused){ U.pauseSheet(); show("pausecard"); }
+      else { hide("pausecard"); lastT=performance.now(); }
     }
   });
   window.addEventListener("keyup", function(ev){ keys[ev.key]=false; });
@@ -634,7 +981,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v11";
+  var BUILD = "v13";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;
@@ -723,7 +1070,7 @@
     var peers = V.net.playingPeers();
     if(!peers.length || !V.net.isHost) return;
     draftQueue=[]; G.state.drafting=false;
-    hide("menu"); hide("endcard"); hide("shopcard"); hide("pausecard"); hide("draft");
+    hide("menu"); hide("endcard"); hide("shopcard"); hide("pausecard"); hide("draft"); hide("chestcard");
     V.net.emitCtl({k:"start", stage:stageKey});
     G.startOnlineHost(peers, stageKey);
     U.party();
@@ -731,7 +1078,7 @@
   }
   U.enterOnlineRun = function(){
     draftQueue=[]; G.state.drafting=false;
-    hide("menu"); hide("endcard"); hide("shopcard"); hide("pausecard"); hide("draft");
+    hide("menu"); hide("endcard"); hide("shopcard"); hide("pausecard"); hide("draft"); hide("chestcard");
     lastT=performance.now();
     U.party();
   };
