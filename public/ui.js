@@ -818,41 +818,100 @@
       wrap.appendChild(el);
     });
   }
+  /* ---------------- selección de cazador ----------------
+     Una sola ficha grande del cazador elegido y, al lado, el plantel
+     entero en recuadros. Arriba, una pestaña por jugador dentro: al
+     empezar solo hay una, y se añaden con el botón. La pestaña activa
+     manda: los recuadros cambian el cazador de ese jugador. */
+  var activeSlot = 0;
+
+  function joinedSlots(){
+    var out=[];
+    for(var i=0;i<4;i++) if(slots[i].joined) out.push(i);
+    return out;
+  }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+
   function renderSlots(){
     var wrap=$("slots");
-    wrap.innerHTML="";
-    for(var i=0;i<4;i++){
-      (function(idx){
-        var s=slots[idx], h=V.HEROES[s.hero];
-        var el=document.createElement("div");
-        el.className="slot"+(s.joined?" on":"");
-        el.style.setProperty("--c", h.color);
-        var picks="";
-        V.HERO_KEYS.forEach(function(hk){
-          picks+='<button type="button" class="pick'+(s.hero===hk?" sel":"")+
-            '" data-h="'+hk+'" style="--pc:'+V.HEROES[hk].color+'" title="'+V.HEROES[hk].name+'">'+
-            V.heroIconHtml(hk, "icn")+'</button>';
-        });
-        el.innerHTML =
-          '<div class="top"><span class="pn">Jugador '+(idx+1)+'</span>'+
-          '<span class="dev">'+(s.joined?inputLabel(s.input):"libre")+'</span></div>'+
-          '<div class="port"><img alt="" src="'+heroPortrait(s.hero)+'"></div>'+
-          '<div class="picks">'+picks+'</div>'+
-          '<div class="cname">'+h.name+'</div>'+
-          '<div class="role">'+h.role+'</div>'+
-          '<div class="start">Empieza con '+(V.WEAPONS[h.weapon].name)+' · '+h.note+'</div>'+
-          '<button type="button" class="joinbtn">'+(s.joined?"Salir":"Unirse")+'</button>';
-        el.querySelectorAll(".pick").forEach(function(b){
-          b.addEventListener("click", function(){ slots[idx].hero=b.getAttribute("data-h"); renderSlots(); });
-        });
-        el.querySelector(".joinbtn").addEventListener("click", function(){
-          if(slots[idx].joined){ slots[idx].joined=false; slots[idx].input=null; }
-          else { var inp=freeInput(); if(!inp) return; slots[idx].joined=true; slots[idx].input=inp; }
-          renderSlots();
-        });
-        wrap.appendChild(el);
-      })(i);
-    }
+    var dentro=joinedSlots();
+    if(!dentro.length){ slots[0].joined=true; slots[0].input=slots[0].input||"kb1"; dentro=[0]; }
+    if(dentro.indexOf(activeSlot) < 0) activeSlot = dentro[0];
+
+    var s=slots[activeSlot], h=V.HEROES[s.hero];
+
+    /* pestañas de jugador + botón de añadir */
+    var tabs="";
+    dentro.forEach(function(idx){
+      var hh=V.HEROES[slots[idx].hero];
+      tabs+='<button type="button" class="ptab'+(idx===activeSlot?" on":"")+
+        '" data-s="'+idx+'" style="--c:'+hh.color+'">'+
+        '<span class="who">Jugador '+(idx+1)+'</span>'+
+        '<span class="dev">'+esc(inputLabel(slots[idx].input))+'</span></button>';
+    });
+    var libre = freeInput();
+    tabs+='<button type="button" class="padd" id="addPl"'+
+      (dentro.length>=4||!libre?" disabled":"")+'>+ Añadir jugador</button>';
+
+    /* el plantel */
+    var otros={};
+    dentro.forEach(function(idx){ if(idx!==activeSlot) otros[slots[idx].hero]=1; });
+    var tiles="";
+    V.HERO_KEYS.forEach(function(hk){
+      var hh=V.HEROES[hk], pin=!!(V.RETRATOS&&V.RETRATOS[hk]);
+      tiles+='<button type="button" class="tile'+(s.hero===hk?" sel":"")+(otros[hk]?" dup":"")+
+        '" data-h="'+hk+'" style="--pc:'+hh.color+'" title="'+esc(hh.name+" · "+hh.role)+'">'+
+        '<span class="tp"><img alt="" class="'+(pin?"":"pix")+'" src="'+heroPortrait(hk)+'"></span>'+
+        '<span class="tn">'+esc(hh.name)+'</span></button>';
+    });
+
+    var pin = !!(V.RETRATOS && V.RETRATOS[s.hero]);
+    wrap.innerHTML =
+      '<div class="pbar">'+tabs+'</div>'+
+      '<div class="selbody">'+
+        '<div class="aoe rivets hpanel" style="--c:'+h.color+'">'+
+          '<div class="hp-port"><img alt="" class="'+(pin?"":"pix")+'" src="'+heroPortrait(s.hero)+'"></div>'+
+          '<div class="hp-name">'+esc(h.name)+'</div>'+
+          '<div class="hp-role">'+esc(h.role)+'</div>'+
+          '<div class="hp-line">'+
+            '<span class="ic">'+V.iconHtml(V.WEAPONS[h.weapon].ico, "icn")+'</span>'+
+            '<span class="tx">'+esc(V.WEAPONS[h.weapon].name)+'</span></div>'+
+          '<div class="hp-note">'+esc(h.note)+'</div>'+
+          '<div class="hp-btns">'+
+            '<button type="button" class="aoebtn" id="delPl"'+
+              (dentro.length<2?" disabled":"")+'>Quitar jugador</button></div>'+
+        '</div>'+
+        '<div class="aoe rivets rpanel">'+
+          '<div class="rlabel">Elige tu cazador · '+V.HERO_KEYS.length+' disponibles</div>'+
+          '<div class="tiles">'+tiles+'</div>'+
+        '</div>'+
+      '</div>';
+
+    wrap.querySelectorAll(".ptab").forEach(function(b){
+      b.addEventListener("click", function(){
+        activeSlot = parseInt(b.getAttribute("data-s"),10); renderSlots();
+      });
+    });
+    wrap.querySelectorAll(".tile").forEach(function(b){
+      b.addEventListener("click", function(){
+        slots[activeSlot].hero = b.getAttribute("data-h");
+        if(activeSlot===0) pushLobby();
+        renderSlots();
+      });
+    });
+    $("addPl").addEventListener("click", function(){
+      var inp=freeInput(); if(!inp) return;
+      for(var k=0;k<4;k++) if(!slots[k].joined){
+        slots[k].joined=true; slots[k].input=inp; activeSlot=k; break;
+      }
+      renderSlots();
+    });
+    $("delPl").addEventListener("click", function(){
+      if(joinedSlots().length<2) return;
+      slots[activeSlot].joined=false; slots[activeSlot].input=null;
+      renderSlots();
+    });
+
     $("startBtn").disabled = !slots.some(function(s){ return s.joined; });
   }
 
@@ -1038,7 +1097,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v18";
+  var BUILD = "v19";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;
@@ -1117,6 +1176,10 @@
   }
   U.renderRoom = renderRoom;
 
+  /* avisar a la sala del cazador elegido, si estamos en línea */
+  function pushLobby(){
+    if(V.net && V.net.setLobby) V.net.setLobby(slots[0].hero, inRoom);
+  }
   function toggleRoom(){
     inRoom = !inRoom;
     V.net.goOnline(inRoom);

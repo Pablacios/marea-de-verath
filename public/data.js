@@ -116,6 +116,16 @@
       carga(k, "pose", "arte/pose_"+k+".webp");
     }
   })();
+  /* Hacia dónde mira la vista de lado tal como vino dibujada en la hoja.
+     La mayoría están de perfil hacia la izquierda; dos miran a la derecha.
+     El motor voltea la figura solo cuando la marcha no coincide con esto,
+     así que caminar a la derecha siempre se ve mirando a la derecha. */
+  V.MIRA_LADO = {
+    alquimista:-1, cantora:-1, cuerva:1,  farolero:-1, nina:-1,
+    penitente:-1,  sepulturero:-1, titiritero:1, viuda:-1, coleccionista:-1
+  };
+  V.miraLado = function(key){ return V.MIRA_LADO[key] === 1 ? 1 : -1; };
+
   /* Devuelve la vista que toca, con reserva si esa no existe */
   V.vistaHeroe = function(key, vista){
     var h = V.HEROART[key];

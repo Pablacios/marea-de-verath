@@ -1001,7 +1001,9 @@
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.translate(pl.x, pl.y + 9 + bob);
-    if(lateral && pl.face < 0) ctx.scale(-1, 1);
+    /* Voltear solo si la marcha y el perfil de la hoja no coinciden. */
+    var mira = V.miraLado ? V.miraLado(pl.hero) : 1;
+    if(lateral && (pl.face || 1) * mira < 0) ctx.scale(-1, 1);
     if(lean) ctx.rotate(lean);
     if(pl.iframe > 0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha = .5;
 

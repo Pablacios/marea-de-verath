@@ -47,7 +47,7 @@
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
 
   .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:12px;padding:16px;text-align:center;overflow:auto;
+    justify-content:center;gap:9px;padding:14px;text-align:center;overflow:auto;
     background:linear-gradient(180deg,rgba(7,6,14,.95),rgba(7,6,14,.985))}
   .overlay h2{font-family:var(--display);font-weight:800;margin:0;
     font-size:clamp(16px,3vw,25px);letter-spacing:.06em;text-wrap:balance}
@@ -83,6 +83,12 @@
   .rbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .rbtns .joinbtn{width:auto;padding:6px 14px}
   button.act.small{font-size:12px;padding:7px 16px}
+  /* sala y escenarios comparten fila: así la selección de cazador se queda
+     con el alto que necesita sin empujar los botones fuera de pantalla */
+  .topcols{display:grid;grid-template-columns:minmax(360px,1fr) minmax(360px,1fr);
+    gap:10px;width:100%;max-width:1020px;align-items:start}
+  .topcols .room{max-width:none}
+  .topcols .stages{max-width:none;gap:6px}
   .stages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:820px}
   .stage{background:var(--panel);border:1px solid var(--edge);border-radius:3px;padding:9px 10px;
     text-align:left;cursor:pointer;color:var(--bone);font-family:var(--body);
@@ -92,33 +98,115 @@
   .stage .sn{font-family:var(--display);font-size:12.5px;letter-spacing:.03em;color:var(--c)}
   .stage .sd{font-size:11.5px;color:var(--bone-dim);line-height:1.35}
 
-  .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:880px}
-  .slot{background:var(--panel);border:1px solid var(--edge);border-radius:3px;padding:9px;
-    display:flex;flex-direction:column;gap:6px;text-align:left}
-  .slot.on{border-color:var(--c);background:linear-gradient(180deg,var(--panel-2),var(--panel))}
-  .slot .top{display:flex;align-items:center;justify-content:space-between;gap:6px}
-  .slot .pn{font-family:var(--display);font-size:11.5px;letter-spacing:.09em;color:var(--bone-dim)}
-  .slot.on .pn{color:var(--c)}
-  .slot .dev{font-size:10.5px;color:var(--bone-dim)}
-  .port{height:132px;display:grid;place-items:center;overflow:hidden;
-    background:radial-gradient(70% 60% at 50% 30%, #1E1830 0%, #0C0A14 100%);
-    border:1px solid var(--edge);border-radius:2px}
-  /* los retratos son pintura, no pixel art: aquí sí se interpola */
-  .port img{height:126px;width:auto;max-width:100%;object-fit:contain;image-rendering:auto;
-    filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
-  .picks{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
-  .pick{aspect-ratio:1;border:1px solid var(--edge);background:#0C0A14;border-radius:2px;padding:2px;
-    color:var(--pc);font-size:12px;cursor:pointer;display:grid;place-items:center;padding:0;
-    font-family:var(--body)}
-  .pick:hover{border-color:var(--pc)}
-  .pick.sel{background:#181226;border-color:var(--pc);box-shadow:inset 0 0 0 1px var(--pc)}
-  .slot .cname{font-family:var(--display);font-size:12.5px;color:var(--c);letter-spacing:.03em}
-  .slot .role{font-size:11px;color:var(--bone-dim);line-height:1.32;flex:1}
-  .slot .start{font-size:10.5px;color:var(--gold);line-height:1.3}
   .joinbtn{font-family:var(--body);font-size:11.5px;letter-spacing:.06em;cursor:pointer;width:100%;
     background:transparent;border:1px solid var(--edge);color:var(--bone-dim);border-radius:2px;padding:5px}
   .joinbtn:hover{color:var(--bone);border-color:var(--bone-dim)}
-  .slot.on .joinbtn{color:var(--bone)}
+
+  /* ---------------- selección de cazador ----------------
+     Marco de piedra y oro, al gusto de Age of Empires II: bisel claro
+     arriba, sombra abajo, filete dorado por dentro y remaches en las
+     cuatro esquinas. Todo con sombras internas, sin una sola imagen. */
+  .aoe{
+    position:relative;border:2px solid #14100D;border-radius:3px;
+    background:
+      linear-gradient(180deg, rgba(255,241,208,.055), rgba(0,0,0,.30)),
+      linear-gradient(180deg,#3B342B 0%,#2A241D 55%,#1C1814 100%);
+    box-shadow:
+      inset 0 0 0 2px #8B7A57,
+      inset 0 0 0 4px #4B4236,
+      inset 0 3px 0 4px rgba(255,238,196,.18),
+      inset 0 -3px 0 4px rgba(0,0,0,.50),
+      0 8px 22px rgba(0,0,0,.55);
+  }
+  .rivets::after{
+    content:"";position:absolute;inset:5px;pointer-events:none;
+    background:
+      radial-gradient(circle at 5px 5px, #E2C88A 0 2px, #6B5A38 2px 3.2px, transparent 3.4px),
+      radial-gradient(circle at calc(100% - 5px) 5px, #E2C88A 0 2px, #6B5A38 2px 3.2px, transparent 3.4px),
+      radial-gradient(circle at 5px calc(100% - 5px), #E2C88A 0 2px, #6B5A38 2px 3.2px, transparent 3.4px),
+      radial-gradient(circle at calc(100% - 5px) calc(100% - 5px), #E2C88A 0 2px, #6B5A38 2px 3.2px, transparent 3.4px);
+  }
+
+  .selector{width:100%;max-width:1020px;display:flex;flex-direction:column;gap:9px}
+
+  /* barra de jugadores: solo se ven los que están dentro */
+  .pbar{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;align-items:center}
+  .ptab{font-family:var(--display);font-size:11.5px;letter-spacing:.08em;cursor:pointer;
+    color:#B9AE93;background:linear-gradient(180deg,#3A332A,#221D18);
+    border:1px solid #14100D;border-radius:3px;padding:6px 13px;
+    box-shadow:inset 0 1px 0 rgba(255,238,196,.16),inset 0 -1px 0 rgba(0,0,0,.5)}
+  .ptab .who{color:var(--c)}
+  .ptab .dev{font-family:var(--body);font-size:10.5px;letter-spacing:0;color:#8A8069;margin-left:6px}
+  .ptab.on .who{color:#FFF1CE;text-shadow:0 0 10px color-mix(in srgb, var(--c) 70%, transparent)}
+  .ptab.on .dev{color:#D8C9A4}
+  .ptab.on{color:#FFF1CE;border-color:#8B7A57;
+    background:linear-gradient(180deg,#5A4E3C,#332B22);
+    box-shadow:inset 0 0 0 1px #C6AC76,0 0 16px rgba(226,200,138,.18)}
+  .padd{font-family:var(--display);font-size:11.5px;letter-spacing:.08em;cursor:pointer;
+    color:#A79B80;background:linear-gradient(180deg,#2E2822,#1C1814);
+    border:1px dashed #6B5A38;border-radius:3px;padding:6px 13px}
+  .padd:hover:not(:disabled){color:#FFF1CE;border-color:#C6AC76}
+  .padd:disabled{opacity:.4;cursor:default}
+
+  .selbody{display:grid;grid-template-columns:302px 1fr;gap:10px;align-items:stretch}
+
+  /* ficha del cazador elegido */
+  .hpanel{padding:13px 14px;display:flex;flex-direction:column;gap:6px;text-align:center}
+  .hp-port{height:210px;display:grid;place-items:center;overflow:hidden;border-radius:2px;
+    border:1px solid #14100D;
+    background:
+      radial-gradient(76% 62% at 50% 26%, color-mix(in srgb, var(--c) 26%, #171222) 0%, #0A0812 100%);
+    box-shadow:inset 0 0 0 1px rgba(226,200,138,.22),inset 0 0 40px rgba(0,0,0,.7)}
+  /* los retratos son pintura, no pixel art: aquí sí se interpola */
+  .hp-port img{height:202px;width:auto;max-width:100%;object-fit:contain;image-rendering:auto;
+    filter:drop-shadow(0 6px 14px rgba(0,0,0,.65))}
+  .hp-port img.pix{image-rendering:pixelated;height:168px}
+  .hp-name{font-family:var(--display);font-size:19px;letter-spacing:.05em;color:var(--c);
+    text-shadow:0 0 18px color-mix(in srgb, var(--c) 40%, transparent)}
+  .hp-role{font-size:12px;color:#B9AE93;line-height:1.35}
+  .hp-line{display:flex;align-items:center;gap:7px;justify-content:center;
+    border-top:1px solid #3A332A;padding-top:6px;margin-top:2px}
+  .hp-line .ic{width:26px;height:26px;padding:3px;border-radius:2px;background:#0B0910;
+    border:1px solid #6B5A38;display:grid;place-items:center;line-height:0;flex:none}
+  .hp-line .tx{font-size:11.5px;color:var(--gold);text-align:left;line-height:1.3}
+  .hp-note{font-size:11.5px;color:#9A907A;line-height:1.35;flex:1}
+  .hp-btns{display:flex;gap:6px}
+
+  /* el plantel */
+  .rpanel{padding:13px 14px 14px;display:flex;flex-direction:column;gap:8px}
+  .rlabel{font-family:var(--display);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:#C6AC76;text-align:left}
+  /* los recuadros se estiran para llenar el panel: cuanto más sitio hay,
+     más grande se ve cada cazador */
+  .tiles{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;
+    flex:1;grid-auto-rows:minmax(104px,1fr)}
+  .tile{cursor:pointer;font-family:var(--body);padding:4px 3px 5px;border-radius:3px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;min-height:0;
+    color:#9A907A;border:1px solid #14100D;
+    background:linear-gradient(180deg,#312B23,#1B1713);
+    box-shadow:inset 0 1px 0 rgba(255,238,196,.12),inset 0 -1px 0 rgba(0,0,0,.5)}
+  .tile .tp{width:100%;flex:1;min-height:0;border-radius:2px;display:grid;place-items:center;
+    overflow:hidden;background:radial-gradient(70% 60% at 50% 30%,#1B1526 0%,#09070F 100%);
+    border:1px solid #14100D}
+  .tile .tp img{width:100%;height:100%;object-fit:contain;object-position:top center;
+    image-rendering:auto}
+  .tile .tp img.pix{image-rendering:pixelated;width:auto;height:84%}
+  .tile .tn{font-size:10.5px;line-height:1.12;letter-spacing:.02em;text-align:center;
+    min-height:2.24em;display:grid;place-items:center;flex:none}
+  .tile:hover{color:#E9DFC6;border-color:#6B5A38}
+  .tile.sel{color:#FFF1CE;border-color:#C6AC76;
+    background:linear-gradient(180deg,#5A4E3C,#2A231B);
+    box-shadow:inset 0 0 0 1px #E2C88A,0 0 18px color-mix(in srgb, var(--pc) 45%, transparent)}
+  .tile.sel .tp{border-color:#8B7A57}
+  /* el mismo cazador ya elegido por otro jugador */
+  .tile.dup{opacity:.45}
+
+  .aoebtn{font-family:var(--display);font-size:11px;letter-spacing:.1em;cursor:pointer;flex:1;
+    color:#C9BEA2;background:linear-gradient(180deg,#3A332A,#221D18);
+    border:1px solid #14100D;border-radius:3px;padding:6px 10px;
+    box-shadow:inset 0 1px 0 rgba(255,238,196,.16),inset 0 -1px 0 rgba(0,0,0,.5)}
+  .aoebtn:hover:not(:disabled){color:#FFF1CE;border-color:#8B7A57}
+  .aoebtn:disabled{opacity:.35;cursor:default}
 
   #draft{background:linear-gradient(180deg,rgba(7,6,14,.88),rgba(7,6,14,.98))}
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;width:100%;max-width:880px}
@@ -225,8 +313,13 @@
     border-radius:50%;background:rgba(194,38,58,.42)}
   body.touch .stick{display:block}
 
+  @media (max-width:900px){
+    .selbody{grid-template-columns:1fr}
+    .hp-port{height:190px}
+    .hp-port img{height:184px}
+    .tiles{grid-template-columns:repeat(5,1fr)}
+  }
   @media (max-width:820px){
-    .slots{grid-template-columns:repeat(2,1fr)}
     .stages{grid-template-columns:1fr}
     .cards{grid-template-columns:1fr}
   }
@@ -249,7 +342,8 @@
     <div class="overlay" id="menu">
       <div class="eyebrow">Solo mueves · las armas disparan solas</div>
       <h2>La noche de la caza</h2>
-      <p>Sobrevive treinta minutos. Sube de nivel, elige mejoras y busca la pareja de arma y pasivo que desata una evolución: la desatan los cofres de los jefes, a partir del minuto diez. El oro sobrevive a tu muerte.</p>
+      <p>Treinta minutos. Sube de nivel, casa un arma con su pasivo y el cofre de un jefe la hará evolucionar. El oro sobrevive a tu muerte.</p>
+      <div class="topcols">
       <div class="room" id="room">
         <div class="rtop">
           <span class="rlabel">Sala</span>
@@ -272,7 +366,8 @@
         </div>
       </div>
       <div class="stages" id="stages"></div>
-      <div class="slots" id="slots"></div>
+      </div>
+      <div class="selector" id="slots"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         <button class="act" id="startBtn">Salir a cazar</button>
         <button class="act ghost" id="shopBtn">Santuario</button>
@@ -360,17 +455,17 @@
   </div>
 </div>
 
-<script src="sprites.js?v=18"></script>
-<script src="icons.js?v=18"></script>
-<script src="foes.js?v=18"></script>
-<script src="props.js?v=18"></script>
-<script src="world.js?v=18"></script>
-<script src="data.js?v=18"></script>
-<script src="weapons.js?v=18"></script>
-<script src="arcana.js?v=18"></script>
-<script src="engine.js?v=18"></script>
-<script src="net.js?v=18"></script>
-<script src="ui.js?v=18"></script>
+<script src="sprites.js?v=19"></script>
+<script src="icons.js?v=19"></script>
+<script src="foes.js?v=19"></script>
+<script src="props.js?v=19"></script>
+<script src="world.js?v=19"></script>
+<script src="data.js?v=19"></script>
+<script src="weapons.js?v=19"></script>
+<script src="arcana.js?v=19"></script>
+<script src="engine.js?v=19"></script>
+<script src="net.js?v=19"></script>
+<script src="ui.js?v=19"></script>
 <script>
 (function(){
   function start(saved){ V.ui.boot(saved || {}); }
