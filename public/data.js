@@ -90,6 +90,9 @@
       note:"+20% de imán, y +5% de velocidad y +10% de imán cada 5 niveles" }
   };
   V.HERO_KEYS = Object.keys(V.HEROES);
+  /* Héroes con retrato pintado a mano en la carpeta arte/ */
+  V.RETRATOS = {viuda:1, farolero:1, sepulturero:1, nina:1, coleccionista:1,
+                penitente:1, cantora:1, alquimista:1, titiritero:1, cuerva:1};
 
   /* ================= PASIVOS =================
      Réplica del modelo de estadísticas: cada uno toca una estadística global

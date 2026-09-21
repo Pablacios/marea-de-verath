@@ -98,13 +98,17 @@
   // luz desde arriba-izquierda y sombra, igual que a los personajes.
   var curStage = "distrito";
   function stamp(g, name, x, y, mode, ox, oy){
-    var s = V.sprite("p_"+curStage+"_"+name, 0);
+    var key = "p_"+curStage+"_"+name;
+    var s = V.sprite(key, 0);
     if(!s) return;
-    var dx = Math.round(x + (T - s.width)/2 + (ox||0));
+    // el mobiliario también está pintado a doble resolución
+    var info = V.sprInfo(key), a = info ? info.art : 1;
+    var sw = s.width/a, sh = s.height/a;
+    var dx = Math.round(x + (T - sw)/2 + (ox||0));
     var dy = mode === "center"
-      ? Math.round(y + (T - s.height)/2 + (oy||0))
-      : Math.round(y + T - s.height + 5 + (oy||0));
-    g.drawImage(s, dx, dy);
+      ? Math.round(y + (T - sh)/2 + (oy||0))
+      : Math.round(y + T - sh + 5 + (oy||0));
+    g.drawImage(s, dx, dy, sw, sh);
   }
   function tree(g,P,x,y){ stamp(g,"arbol",x,y); }
   function deadTree(g,P,x,y){ stamp(g,"arbolSeco",x,y); }

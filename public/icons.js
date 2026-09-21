@@ -26,7 +26,8 @@
     return out;
   }
   function ico(key, pal, rows){
-    ICON[key] = {cv: V.px.paint(pal, grid(rows), {anim:false}), url:null, evo:null};
+    // los iconos se pintan sin luz de canto: a este tamaño solo haría ruido
+    ICON[key] = {cv: V.px.paint(pal, grid(rows), {anim:false, rim:false}), url:null, evo:null};
   }
 
   /* variante dorada para las evoluciones: el icono base bañado en oro

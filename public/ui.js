@@ -794,7 +794,11 @@
     if(!used.kb2) return "kb2";
     return null;
   }
+  /* Diez héroes tienen retrato pintado; el resto usa su propio sprite.
+     El retrato solo aparece donde hay sitio para verlo: a tamaño de
+     partida no se leería, y ahí manda el pixel art. */
   function heroPortrait(key){
+    if(V.RETRATOS && V.RETRATOS[key]) return "arte/retrato_" + key + ".webp";
     var c = V.sprite(V.HEROES[key].spr, 0);
     return c ? c.toDataURL() : "";
   }
@@ -981,7 +985,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v13";
+  var BUILD = "v15";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;

@@ -1,4 +1,6 @@
 <meta charset="utf-8">
+<!-- VERSION: al publicar una versión nueva, cambia el ?v= de los scripts
+     de abajo. Es lo que obliga al navegador a descargarlos otra vez. -->
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Marea de Verrath</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
@@ -83,8 +85,12 @@
   .slot .pn{font-family:var(--display);font-size:11.5px;letter-spacing:.09em;color:var(--bone-dim)}
   .slot.on .pn{color:var(--c)}
   .slot .dev{font-size:10.5px;color:var(--bone-dim)}
-  .port{height:54px;display:grid;place-items:center;background:#0C0A14;border:1px solid var(--edge);border-radius:2px}
-  .port img{height:48px;width:auto}
+  .port{height:132px;display:grid;place-items:center;overflow:hidden;
+    background:radial-gradient(70% 60% at 50% 30%, #1E1830 0%, #0C0A14 100%);
+    border:1px solid var(--edge);border-radius:2px}
+  /* los retratos son pintura, no pixel art: aquí sí se interpola */
+  .port img{height:126px;width:auto;max-width:100%;object-fit:contain;image-rendering:auto;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
   .picks{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
   .pick{aspect-ratio:1;border:1px solid var(--edge);background:#0C0A14;border-radius:2px;padding:2px;
     color:var(--pc);font-size:12px;cursor:pointer;display:grid;place-items:center;padding:0;
@@ -215,7 +221,7 @@
 <div class="wrap">
   <header class="brand">
     <h1>Marea de Verrath</h1>
-    <span class="tag">16 héroes · 24 armas · 23 evoluciones · 22 arcanas</span>
+    <span class="tag">Pixel art 32 bits · 16 héroes · 24 armas · 22 arcanas</span>
   </header>
 
   <div class="screen" id="screen">
@@ -336,17 +342,17 @@
   </div>
 </div>
 
-<script src="sprites.js"></script>
-<script src="icons.js"></script>
-<script src="foes.js"></script>
-<script src="props.js"></script>
-<script src="world.js"></script>
-<script src="data.js"></script>
-<script src="weapons.js"></script>
-<script src="arcana.js"></script>
-<script src="engine.js"></script>
-<script src="net.js"></script>
-<script src="ui.js"></script>
+<script src="sprites.js?v=15"></script>
+<script src="icons.js?v=15"></script>
+<script src="foes.js?v=15"></script>
+<script src="props.js?v=15"></script>
+<script src="world.js?v=15"></script>
+<script src="data.js?v=15"></script>
+<script src="weapons.js?v=15"></script>
+<script src="arcana.js?v=15"></script>
+<script src="engine.js?v=15"></script>
+<script src="net.js?v=15"></script>
+<script src="ui.js?v=15"></script>
 <script>
 (function(){
   function start(saved){ V.ui.boot(saved || {}); }

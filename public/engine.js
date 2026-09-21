@@ -937,6 +937,14 @@
   }
 
   /* ---------------- dibujado ---------------- */
+  /* El arte va a doble resolución: cada sprite sabe a qué escala está
+     pintado y aquí se dibuja siempre al tamaño de mundo de siempre. */
+  function sw(key){ var e=V.sprInfo(key); return e ? e.art : 1; }
+  function blit(cv, key, x, y){
+    var a = sw(key), dw = cv.width/a, dh = cv.height/a;
+    ctx.drawImage(cv, Math.round(x), Math.round(y), dw, dh);
+  }
+
   function render(){
     var w=canvas.width, h=canvas.height;
     ctx.setTransform(1,0,0,1,0,0);
@@ -965,8 +973,8 @@
       if(gem.x<left||gem.x>right||gem.y<top||gem.y>bot) continue;
       var tier = V.gemTier(gem.v);
       var key = tier===2?"i_gema3":(tier===1?"i_gema2":"i_gema");
-      var s=V.sprite(key,0);
-      ctx.drawImage(s, Math.round(gem.x-s.width/2), Math.round(gem.y-s.height/2+Math.sin(gem.t*4)*2));
+      var s=V.sprite(key,0), ga=sw(key);
+      blit(s, key, gem.x-(s.width/ga)/2, gem.y-(s.height/ga)/2+Math.sin(gem.t*4)*2);
     }
     for(var d=0;d<drops.length;d++){
       var dr=drops[d];
@@ -979,8 +987,8 @@
         }
         ks = "i_oro";
       }
-      var sp2=V.sprite(ks,0);
-      ctx.drawImage(sp2, Math.round(dr.x-sp2.width/2), Math.round(dr.y-sp2.height/2));
+      var sp2=V.sprite(ks,0), da=sw(ks);
+      blit(sp2, ks, dr.x-(sp2.width/da)/2, dr.y-(sp2.height/da)/2);
     }
 
     // enemigos
@@ -1000,22 +1008,25 @@
         }
         continue;
       }
+      var fa = sw(fo.def.spr);
+      var clip = fo.freeze > 0 ? "idle" : "walk";
       if(fo.hit>0) spr = V.spriteHit(fo.def.spr);
-      else spr = V.sprite(fo.def.spr, (Math.floor(runT*7)+fo.frame)%4);
+      else spr = V.sprite(fo.def.spr, Math.floor(runT*9)+fo.frame, clip);
       if(!spr) continue;
+      var dw = spr.width/fa, dh = spr.height/fa;
       // anclado por los pies: la sombra del sprite se apoya en el suelo
       var foot = Math.round(fo.r*0.9);
-      var px=Math.round(fo.x-spr.width/2), py=Math.round(fo.y-spr.height+foot);
+      var px=Math.round(fo.x-dw/2), py=Math.round(fo.y-dh+foot);
       if(fo.freeze>0){ ctx.globalAlpha=.75; }
       if(fo.face<0){
         ctx.save(); ctx.translate(Math.round(fo.x),Math.round(fo.y)); ctx.scale(-1,1);
-        ctx.drawImage(spr, -spr.width/2, -spr.height+foot); ctx.restore();
-      } else ctx.drawImage(spr, px, py);
+        ctx.drawImage(spr, -dw/2, -dh+foot, dw, dh); ctx.restore();
+      } else ctx.drawImage(spr, px, py, dw, dh);
       ctx.globalAlpha=1;
       if(fo.freeze>0){
         ctx.fillStyle="rgba(124,198,255,.45)";
-        ctx.fillRect(px, py, spr.width, 3);
-        ctx.fillRect(px, py+spr.height-3, spr.width, 3);
+        ctx.fillRect(px, py, dw, 3);
+        ctx.fillRect(px, py+dh-3, dw, 3);
       }
       if(fo.def.elite||fo.def.reaper){
         var frac=clamp(fo.hp/fo.maxhp,0,1);
@@ -1028,12 +1039,13 @@
     for(var b2=0;b2<bullets.length;b2++){
       var bu=bullets[b2];
       var bs = bu.spr ? V.sprite(bu.spr,0) : null;
+      var ba = bu.spr ? sw(bu.spr) : 1;
       if(bs){
         ctx.save(); ctx.translate(Math.round(bu.x),Math.round(bu.y));
         if(bu.rot||bu.spin) ctx.rotate(bu.rotA);
         var sc = bu.r/8;
         if(sc>1.08||sc<0.92){ ctx.scale(sc,sc); }
-        ctx.drawImage(bs, -bs.width/2, -bs.height/2);
+        ctx.drawImage(bs, -(bs.width/ba)/2, -(bs.height/ba)/2, bs.width/ba, bs.height/ba);
         ctx.restore();
       } else {
         ctx.fillStyle="#FFF";
@@ -1049,12 +1061,15 @@
         var ww=pl.weapons[wd];
         if(ww.def.draw) ww.def.draw(pl, ww, ctx);
       }
-      var frame = (Math.abs(pl.aimx)+Math.abs(pl.aimy)) > 0 ? (Math.floor(pl.walk)%4) : 0;
-      var ps = pl.hurt>0 ? V.spriteHit(pl.spr) : V.sprite(pl.spr, frame);
+      var pa = sw(pl.spr);
+      var clipP = pl.moving ? "walk" : "idle";
+      var frame = pl.moving ? Math.floor(pl.walk*1.6) : Math.floor(runT*2.4);
+      var ps = pl.hurt>0 ? V.spriteHit(pl.spr) : V.sprite(pl.spr, frame, clipP);
+      var pw = ps.width/pa, phh = ps.height/pa;
       if(pl.iframe>0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha=.45;
       ctx.save(); ctx.translate(Math.round(pl.x), Math.round(pl.y));
       if(pl.face<0) ctx.scale(-1,1);
-      ctx.drawImage(ps, -ps.width/2, -(ps.height-12));
+      ctx.drawImage(ps, -pw/2, -(phh-12), pw, phh);
       ctx.restore();
       ctx.globalAlpha=1;
       // barra de vida pegada a los pies
