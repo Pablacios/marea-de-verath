@@ -97,19 +97,32 @@
   /* Pose pintada de cuerpo entero para la partida. Se carga aparte; hasta
      que llega, el héroe se dibuja con su sprite de píxeles, así que el
      juego arranca al instante aunque la red vaya lenta. */
+  /* Tres vistas por héroe —de frente, de espaldas y de lado— recortadas de
+     sus hojas. Si alguna falta, se usa la pose lateral y no pasa nada. */
   V.HEROART = {};
   (function(){
+    var VISTAS = ["frente","espalda","lado"];
+    function carga(key, vista, ruta, destino){
+      var img = new Image();
+      img.decoding = "async";
+      img.onload = function(){
+        V.HEROART[key] = V.HEROART[key] || {};
+        V.HEROART[key][vista] = img;
+      };
+      img.src = ruta;
+    }
     for(var k in V.RETRATOS){
-      (function(key){
-        var img = new Image();
-        img.decoding = "async";
-        img.onload = function(){ V.HEROART[key] = img; };
-        img.src = "arte/pose_" + key + ".webp";
-      })(k);
+      for(var i=0;i<VISTAS.length;i++) carga(k, VISTAS[i], "arte/v_"+k+"_"+VISTAS[i]+".webp");
+      carga(k, "pose", "arte/pose_"+k+".webp");
     }
   })();
-  /* Cuánto más grande se dibuja el héroe que su tamaño de colisión. No
-     toca la cámara: el mapa se sigue viendo igual, solo destaca él. */
+  /* Devuelve la vista que toca, con reserva si esa no existe */
+  V.vistaHeroe = function(key, vista){
+    var h = V.HEROART[key];
+    if(!h) return null;
+    return h[vista] || h.lado || h.pose || h.frente || h.espalda || null;
+  };
+
   V.HERO_SCALE = 1.9;
 
   /* ================= PASIVOS =================

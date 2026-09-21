@@ -957,15 +957,39 @@
     blancos[key] = c;
     return c;
   }
-  function dibujaHeroePintado(pl, img){
+  /* Vista según hacia dónde camina: de frente si baja, de espaldas si sube,
+     de lado si va en horizontal. La última vista se recuerda al pararse. */
+  function vistaDe(pl){
+    if(!pl.moving) return pl.vista || "lado";
+    var mx = pl.aimx, my = pl.aimy;
+    if(Math.abs(mx) >= Math.abs(my)*0.85) pl.vista = "lado";
+    else pl.vista = my > 0 ? "frente" : "espalda";
+    return pl.vista;
+  }
+
+  /* ---------------- el paso ----------------
+     De cada hoja salió una pose por vista, no una tira de fotogramas: los
+     cuadros de caminata venían solapados y no había por dónde cortarlos.
+     Así que el paso lo construye el motor: la figura se parte en nueve
+     franjas horizontales y se les aplica una onda que baja del pecho a los
+     pies, con la amplitud creciendo hacia abajo. Eso balancea el faldón y
+     las piernas; encima va el rebote del cuerpo y una compresión en el
+     apoyo. De lado se nota como zancada; de frente, como contoneo. */
+  function dibujaHeroePintado(pl, img, vista){
     var alto = 30 * (V.HERO_SCALE || 1.9);
     var ancho = alto * (img.width / img.height);
-    var bob  = pl.moving ? Math.sin(pl.walk*2.2)*1.6 : Math.sin(runT*2.0)*0.8;
-    var lean = pl.moving ? Math.sin(pl.walk*1.1)*0.035 : 0;
+    var lateral = (vista === "lado");
 
-    // sombra de contacto: sin ella el personaje flota sobre el suelo
+    var fase = pl.walk * 1.35;
+    var mov  = pl.moving ? 1 : 0;
+    var onda = (lateral ? 3.4 : 2.0) * mov;
+    var bob  = pl.moving ? Math.abs(Math.sin(fase))* -1.7 : Math.sin(runT*2.0)*0.7;
+    var aplasta = pl.moving ? 1 + Math.abs(Math.cos(fase))*0.022 : 1;
+    var lean = lateral ? Math.sin(fase)*0.03*mov : 0;
+
+    // sombra de contacto: se estrecha cuando el cuerpo sube
     ctx.save();
-    ctx.globalAlpha = 0.34;
+    ctx.globalAlpha = 0.30 + 0.08*Math.abs(Math.cos(fase))*mov;
     ctx.fillStyle = "#06040E";
     ctx.beginPath();
     ctx.ellipse(pl.x, pl.y + 9, ancho*0.30, 4.2, 0, 0, 6.283);
@@ -976,13 +1000,46 @@
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.translate(pl.x, pl.y + 9 + bob);
-    if(pl.face < 0) ctx.scale(-1, 1);
-    ctx.rotate(lean);
+    if(lateral && pl.face < 0) ctx.scale(-1, 1);
+    if(lean) ctx.rotate(lean);
     if(pl.iframe > 0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha = .5;
-    ctx.drawImage(img, -ancho/2, -alto, ancho, alto);
+
+    var N = 9, sh = img.height / N;
+    var altoF = (alto / N) * aplasta;
+    for(var i=0;i<N;i++){
+      var t = i/(N-1);                       // 0 arriba, 1 a los pies
+      var peso = t*t;                        // el balanceo vive abajo
+      var dx = onda * Math.sin(fase - t*2.1) * peso;
+      var dy = -alto*aplasta + i*altoF;
+      if(mov && t > 0.60){
+        /* Abajo las dos mitades van en sentidos opuestos: una pierna
+           adelanta mientras la otra retrasa, y la que adelanta se levanta
+           un poco. Es lo que convierte el balanceo en zancada. */
+        // las mitades se solapan un poco: si no, al separarse se abre
+        // una costura por el centro de la figura
+        var sol = img.width*0.09, mitad = img.width/2;
+        var solD = ancho*0.09, amp = onda*1.05*peso;
+        var izqX = -amp*Math.sin(fase), derX = amp*Math.sin(fase);
+        var izqY = -Math.max(0, Math.sin(fase))*1.6*peso;
+        var derY = -Math.max(0, -Math.sin(fase))*1.6*peso;
+        ctx.drawImage(img, 0, i*sh, mitad + sol, sh + 0.6,
+          -ancho/2 + dx + izqX, dy + izqY, ancho/2 + solD, altoF + 0.6);
+        ctx.drawImage(img, mitad - sol, i*sh, mitad + sol, sh + 0.6,
+          -solD + dx + derX, dy + derY, ancho/2 + solD, altoF + 0.6);
+      } else {
+        ctx.drawImage(img, 0, i*sh, img.width, sh + 0.6,
+                      -ancho/2 + dx, dy, ancho, altoF + 0.6);
+      }
+    }
     if(pl.hurt > 0){
       ctx.globalAlpha = Math.min(1, pl.hurt*4);
-      ctx.drawImage(siluetaBlanca(pl.hero, img), -ancho/2, -alto, ancho, alto);
+      var bl = siluetaBlanca(pl.hero + vista, img);
+      for(var j=0;j<N;j++){
+        var t2 = j/(N-1), p2 = t2*t2;
+        ctx.drawImage(bl, 0, j*sh, img.width, sh + 0.6,
+          -ancho/2 + onda*Math.sin(fase - t2*2.1)*p2, -alto*aplasta + j*altoF,
+          ancho, altoF + 0.6);
+      }
     }
     ctx.restore();
     ctx.imageSmoothingEnabled = false;
@@ -1110,9 +1167,10 @@
         var ww=pl.weapons[wd];
         if(ww.def.draw) ww.def.draw(pl, ww, ctx);
       }
-      var pintado = V.HEROART ? V.HEROART[pl.hero] : null;
+      var vistaP = vistaDe(pl);
+      var pintado = V.vistaHeroe ? V.vistaHeroe(pl.hero, vistaP) : null;
       if(pintado){
-        dibujaHeroePintado(pl, pintado);
+        dibujaHeroePintado(pl, pintado, vistaP);
         if(players.length>1){
           ctx.fillStyle="rgba(7,6,14,.8)";
           ctx.fillRect(Math.round(pl.x)-7, Math.round(pl.y)-64, 14, 12);
