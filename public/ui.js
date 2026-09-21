@@ -900,6 +900,37 @@
   $("wipeBtn").addEventListener("click", function(){ V.meta={}; saveMeta(); renderShop(); U.sync(); });
   $("resumeBtn").addEventListener("click", function(){ G.state.paused=false; hide("pausecard"); lastT=performance.now(); });
   $("chestBtn").addEventListener("click", closeChest);
+  /* Selector de resolución: cambia el lienzo interno, no la caja de la
+     página. La proporción del recuadro sigue a la elegida para que nada
+     salga estirado, y la elección se recuerda. */
+  (function(){
+    var sel = $("resSel");
+    if(!sel || !V.RESOLUCIONES) return;
+    var guardada = 0;
+    try{ guardada = parseInt(localStorage.getItem("verrath.res")||"0", 10) || 0; }catch(e){}
+    if(guardada < 0 || guardada >= V.RESOLUCIONES.length) guardada = 0;
+    for(var i=0;i<V.RESOLUCIONES.length;i++){
+      var o = document.createElement("option");
+      o.value = i; o.textContent = V.RESOLUCIONES[i].n;
+      sel.appendChild(o);
+    }
+    function aplica(i){
+      var r = V.RESOLUCIONES[i];
+      if(r.w && r.h){
+        screenEl.style.aspectRatio = r.w + " / " + r.h;
+        screenEl.style.maxWidth = "calc((100vh - 210px) * " + (r.w/r.h).toFixed(4) + ")";
+      } else {
+        screenEl.style.aspectRatio = "";
+        screenEl.style.maxWidth = "";
+      }
+      // el lienzo se remide después de que el navegador aplique el estilo
+      setTimeout(function(){ G.setResolucion(r.w, r.h); }, 30);
+      try{ localStorage.setItem("verrath.res", String(i)); }catch(e){}
+    }
+    sel.value = String(guardada);
+    aplica(guardada);
+    sel.addEventListener("change", function(){ aplica(parseInt(sel.value,10)||0); });
+  })();
   (function(){
     var btn = $("fsBtn"), sc = screenEl;
     if(!btn || !sc) return;
@@ -1007,7 +1038,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v17";
+  var BUILD = "v18";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;

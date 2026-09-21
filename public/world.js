@@ -102,7 +102,7 @@
     var s = V.sprite(key, 0);
     if(!s) return;
     // el mobiliario también está pintado a doble resolución
-    var info = V.sprInfo(key), a = info ? info.art : 1;
+    var info = V.sprInfo(key), a = (info ? info.art : 1) / (V.PROP_SCALE || 1);
     var sw = s.width/a, sh = s.height/a;
     var dx = Math.round(x + (T - sw)/2 + (ox||0));
     var dy = mode === "center"

@@ -28,6 +28,9 @@
     text-shadow:0 0 22px rgba(194,38,58,.25)}
   .brand .tag{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim)}
   .brand .grow{flex:1}
+  #resSel{font-family:var(--body);font-size:11.5px;background:#0C0A14;color:var(--bone-dim);
+    border:1px solid var(--edge);border-radius:2px;padding:6px 8px;max-width:15rem}
+  #resSel:hover{color:var(--bone);border-color:var(--bone-dim)}
   #fsBtn{font-family:var(--body);font-size:11.5px;letter-spacing:.06em;cursor:pointer;
     background:transparent;border:1px solid var(--edge);color:var(--bone-dim);
     border-radius:2px;padding:6px 13px;white-space:nowrap}
@@ -235,6 +238,7 @@
     <h1>Marea de Verrath</h1>
     <span class="tag">16 héroes · 24 armas · 22 arcanas</span>
     <span class="grow"></span>
+    <select id="resSel" title="Resolución de dibujado"></select>
     <button type="button" id="fsBtn">Pantalla completa</button>
   </header>
 
@@ -356,17 +360,17 @@
   </div>
 </div>
 
-<script src="sprites.js?v=17"></script>
-<script src="icons.js?v=17"></script>
-<script src="foes.js?v=17"></script>
-<script src="props.js?v=17"></script>
-<script src="world.js?v=17"></script>
-<script src="data.js?v=17"></script>
-<script src="weapons.js?v=17"></script>
-<script src="arcana.js?v=17"></script>
-<script src="engine.js?v=17"></script>
-<script src="net.js?v=17"></script>
-<script src="ui.js?v=17"></script>
+<script src="sprites.js?v=18"></script>
+<script src="icons.js?v=18"></script>
+<script src="foes.js?v=18"></script>
+<script src="props.js?v=18"></script>
+<script src="world.js?v=18"></script>
+<script src="data.js?v=18"></script>
+<script src="weapons.js?v=18"></script>
+<script src="arcana.js?v=18"></script>
+<script src="engine.js?v=18"></script>
+<script src="net.js?v=18"></script>
+<script src="ui.js?v=18"></script>
 <script>
 (function(){
   function start(saved){ V.ui.boot(saved || {}); }

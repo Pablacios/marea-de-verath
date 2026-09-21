@@ -323,7 +323,14 @@
     var e = BANK[key];
     if(!e) return null;
     var list = (clip && e.clips[clip]) ? e.clips[clip] : e.f;
-    return list[(frame||0) % list.length];
+    /* El índice puede llegar negativo o fuera de rango si el reloj de la
+       partida se mueve hacia atrás (migración de anfitrión, demo del menú).
+       Se normaliza aquí en vez de confiar en quien llama. */
+    var i = Math.floor(frame || 0);
+    if(!isFinite(i)) i = 0;
+    i = i % list.length;
+    if(i < 0) i += list.length;
+    return list[i];
   };
   V.spriteHit = function(key){ var e=BANK[key]; return e ? e.hit : null; };
   V.sprInfo = function(key){ return BANK[key] || null; };

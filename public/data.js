@@ -124,6 +124,39 @@
   };
 
   V.HERO_SCALE = 1.9;
+  /* Enemigos y mobiliario suben con él para que las proporciones cuadren.
+     Solo cambia el dibujo: los radios de colisión siguen igual, así que el
+     juego se comporta exactamente como antes. */
+  V.FOE_SCALE  = 1.55;
+  V.PROP_SCALE = 1.45;
+
+  /* ================= RESOLUCIONES =================
+     Resolución interna de dibujado, independiente del tamaño de la caja en
+     la página. Cuanto más alta, más fino y más grande se ve todo, porque
+     el mundo visible se mantiene constante. Las veinte más usadas, de 240p
+     a 4K, con tres panorámicas para monitores anchos. */
+  V.RESOLUCIONES = [
+    {n:"Automática (tu pantalla)", w:0, h:0},
+    {n:"426 × 240 · 240p",         w:426,  h:240},
+    {n:"640 × 360 · 360p",         w:640,  h:360},
+    {n:"854 × 480 · 480p",         w:854,  h:480},
+    {n:"960 × 540 · qHD",          w:960,  h:540},
+    {n:"1024 × 576",               w:1024, h:576},
+    {n:"1152 × 648",               w:1152, h:648},
+    {n:"1280 × 720 · 720p",        w:1280, h:720},
+    {n:"1366 × 768",               w:1366, h:768},
+    {n:"1600 × 900 · HD+",         w:1600, h:900},
+    {n:"1920 × 1080 · 1080p",      w:1920, h:1080},
+    {n:"2048 × 1152",              w:2048, h:1152},
+    {n:"2560 × 1080 · ultrapanorámica", w:2560, h:1080},
+    {n:"2560 × 1440 · 1440p (2K)", w:2560, h:1440},
+    {n:"2880 × 1620",              w:2880, h:1620},
+    {n:"3440 × 1440 · ultrapanorámica 2K", w:3440, h:1440},
+    {n:"3200 × 1800",              w:3200, h:1800},
+    {n:"3840 × 1600 · ultrapanorámica ancha", w:3840, h:1600},
+    {n:"3840 × 2160 · 4K",         w:3840, h:2160},
+    {n:"4096 × 2160 · 4K DCI",     w:4096, h:2160}
+  ];
 
   /* ================= PASIVOS =================
      Réplica del modelo de estadísticas: cada uno toca una estadística global

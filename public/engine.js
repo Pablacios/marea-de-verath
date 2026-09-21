@@ -982,14 +982,15 @@
 
     var fase = pl.walk * 1.35;
     var mov  = pl.moving ? 1 : 0;
-    var onda = (lateral ? 3.4 : 2.0) * mov;
-    var bob  = pl.moving ? Math.abs(Math.sin(fase))* -1.7 : Math.sin(runT*2.0)*0.7;
-    var aplasta = pl.moving ? 1 + Math.abs(Math.cos(fase))*0.022 : 1;
-    var lean = lateral ? Math.sin(fase)*0.03*mov : 0;
+    /* El cuerpo va quieto: nada de rebote, inclinación ni compresión. Solo
+       se mueve de la cintura para abajo, que es lo que hace que la caminata
+       se lea fluida en vez de a saltos. */
+    var onda = (lateral ? 1.1 : 0.7) * mov;
+    var bob = 0, aplasta = 1, lean = 0;
 
     // sombra de contacto: se estrecha cuando el cuerpo sube
     ctx.save();
-    ctx.globalAlpha = 0.30 + 0.08*Math.abs(Math.cos(fase))*mov;
+    ctx.globalAlpha = 0.30;
     ctx.fillStyle = "#06040E";
     ctx.beginPath();
     ctx.ellipse(pl.x, pl.y + 9, ancho*0.30, 4.2, 0, 0, 6.283);
@@ -1008,8 +1009,9 @@
     var altoF = (alto / N) * aplasta;
     for(var i=0;i<N;i++){
       var t = i/(N-1);                       // 0 arriba, 1 a los pies
-      var peso = t*t;                        // el balanceo vive abajo
-      var dx = onda * Math.sin(fase - t*2.1) * peso;
+      // de la cintura para arriba no se mueve nada
+      var peso = t < 0.55 ? 0 : (t-0.55)/0.45;
+      var dx = onda * Math.sin(fase - t*1.2) * peso;
       var dy = -alto*aplasta + i*altoF;
       if(mov && t > 0.60){
         /* Abajo las dos mitades van en sentidos opuestos: una pierna
@@ -1018,10 +1020,11 @@
         // las mitades se solapan un poco: si no, al separarse se abre
         // una costura por el centro de la figura
         var sol = img.width*0.09, mitad = img.width/2;
-        var solD = ancho*0.09, amp = onda*1.05*peso;
+        var solD = ancho*0.09, amp = (lateral ? 3.0 : 1.8)*peso;
         var izqX = -amp*Math.sin(fase), derX = amp*Math.sin(fase);
-        var izqY = -Math.max(0, Math.sin(fase))*1.6*peso;
-        var derY = -Math.max(0, -Math.sin(fase))*1.6*peso;
+        // el pie que adelanta se despega del suelo; el otro se queda
+        var izqY = -Math.max(0, Math.sin(fase))*1.5*peso;
+        var derY = -Math.max(0, -Math.sin(fase))*1.5*peso;
         ctx.drawImage(img, 0, i*sh, mitad + sol, sh + 0.6,
           -ancho/2 + dx + izqX, dy + izqY, ancho/2 + solD, altoF + 0.6);
         ctx.drawImage(img, mitad - sol, i*sh, mitad + sol, sh + 0.6,
@@ -1114,7 +1117,7 @@
         }
         continue;
       }
-      var fa = sw(fo.def.spr);
+      var fa = sw(fo.def.spr) / (V.FOE_SCALE || 1);
       var clip = fo.freeze > 0 ? "idle" : "walk";
       if(fo.hit>0) spr = V.spriteHit(fo.def.spr);
       else spr = V.sprite(fo.def.spr, Math.floor(runT*9)+fo.frame, clip);
@@ -1328,14 +1331,33 @@
     G.canvas = canvas; G.ctx = ctx;
     G.resize();
   };
+  /* Resolución fija elegida por el jugador; si no hay ninguna, se usa la
+     del elemento en pantalla. */
+  var resFija = null;
+  G.setResolucion = function(w, h){
+    resFija = (w && h) ? {w:w, h:h} : null;
+    G.resize();
+    return resFija;
+  };
+  G.resolucion = function(){ return {w:canvas.width, h:canvas.height, fija:!!resFija}; };
+
   G.resize = function(){
-    var rect = screenEl.getBoundingClientRect();
-    var dpr = Math.min(window.devicePixelRatio||1, 2);
-    canvas.width = Math.max(320, Math.round(rect.width*dpr));
-    canvas.height = Math.max(200, Math.round(rect.height*dpr));
-    // el mundo visible se mantiene constante: en una pantalla grande no se
-    // ve más mapa, se ve lo mismo pero más grande
-    baseZoom = clamp(canvas.width/860, .8, 3.2);
+    // puede llamarse antes de que exista el lienzo: en ese caso no hay nada
+    // que medir todavía y la resolución elegida se aplica al arrancar
+    if(!canvas || !screenEl) return;
+    if(resFija){
+      canvas.width = resFija.w;
+      canvas.height = resFija.h;
+    } else {
+      var rect = screenEl.getBoundingClientRect();
+      var dpr = Math.min(window.devicePixelRatio||1, 2);
+      canvas.width = Math.max(320, Math.round(rect.width*dpr));
+      canvas.height = Math.max(200, Math.round(rect.height*dpr));
+    }
+    /* El mundo visible es siempre el mismo ancho: subir la resolución no
+       da ventaja, solo detalle. Sin tope arriba, para que en 4K se vea de
+       verdad a 4K. */
+    baseZoom = Math.max(0.40, canvas.width/860);
     zoom = baseZoom;
   };
   G.startRun = function(slots, stgKey){
