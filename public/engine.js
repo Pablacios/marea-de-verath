@@ -939,6 +939,55 @@
   /* ---------------- dibujado ---------------- */
   /* El arte va a doble resolución: cada sprite sabe a qué escala está
      pintado y aquí se dibuja siempre al tamaño de mundo de siempre. */
+  /* Héroes pintados: la pose va en una imagen de verdad, no en una rejilla
+     de píxeles, así que se dibuja suavizada y a mayor tamaño que el sprite.
+     La animación la pone el motor: rebote al andar, ligera inclinación y
+     desplome al caer. Es lo que permite subir el detalle del personaje sin
+     mover la cámara ni quitarle mapa al jugador. */
+  var blancos = {};
+  function siluetaBlanca(key, img){
+    if(blancos[key]) return blancos[key];
+    var c = document.createElement("canvas");
+    c.width = img.width; c.height = img.height;
+    var g = c.getContext("2d");
+    g.drawImage(img, 0, 0);
+    g.globalCompositeOperation = "source-atop";
+    g.fillStyle = "rgba(255,248,236,.92)";
+    g.fillRect(0, 0, c.width, c.height);
+    blancos[key] = c;
+    return c;
+  }
+  function dibujaHeroePintado(pl, img){
+    var alto = 30 * (V.HERO_SCALE || 1.9);
+    var ancho = alto * (img.width / img.height);
+    var bob  = pl.moving ? Math.sin(pl.walk*2.2)*1.6 : Math.sin(runT*2.0)*0.8;
+    var lean = pl.moving ? Math.sin(pl.walk*1.1)*0.035 : 0;
+
+    // sombra de contacto: sin ella el personaje flota sobre el suelo
+    ctx.save();
+    ctx.globalAlpha = 0.34;
+    ctx.fillStyle = "#06040E";
+    ctx.beginPath();
+    ctx.ellipse(pl.x, pl.y + 9, ancho*0.30, 4.2, 0, 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.translate(pl.x, pl.y + 9 + bob);
+    if(pl.face < 0) ctx.scale(-1, 1);
+    ctx.rotate(lean);
+    if(pl.iframe > 0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha = .5;
+    ctx.drawImage(img, -ancho/2, -alto, ancho, alto);
+    if(pl.hurt > 0){
+      ctx.globalAlpha = Math.min(1, pl.hurt*4);
+      ctx.drawImage(siluetaBlanca(pl.hero, img), -ancho/2, -alto, ancho, alto);
+    }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+  }
+
   function sw(key){ var e=V.sprInfo(key); return e ? e.art : 1; }
   function blit(cv, key, x, y){
     var a = sw(key), dw = cv.width/a, dh = cv.height/a;
@@ -1060,6 +1109,27 @@
       for(var wd=0;wd<pl.weapons.length;wd++){
         var ww=pl.weapons[wd];
         if(ww.def.draw) ww.def.draw(pl, ww, ctx);
+      }
+      var pintado = V.HEROART ? V.HEROART[pl.hero] : null;
+      if(pintado){
+        dibujaHeroePintado(pl, pintado);
+        if(players.length>1){
+          ctx.fillStyle="rgba(7,6,14,.8)";
+          ctx.fillRect(Math.round(pl.x)-7, Math.round(pl.y)-64, 14, 12);
+          ctx.fillStyle=pl.color;
+          ctx.font="700 11px 'Barlow Semi Condensed',Arial,sans-serif";
+          ctx.textAlign="center";
+          ctx.fillText(String(pl.slot+1), Math.round(pl.x), Math.round(pl.y)-55);
+        }
+        var hf2 = clamp(pl.hp/pl.maxhp, 0, 1);
+        if(hf2 < 1){
+          var bw2 = 30, bx2 = Math.round(pl.x)-bw2/2, by2 = Math.round(pl.y)+13;
+          ctx.fillStyle="rgba(7,6,14,.85)"; ctx.fillRect(bx2-1, by2-1, bw2+2, 5);
+          ctx.fillStyle="#2A1018"; ctx.fillRect(bx2, by2, bw2, 3);
+          ctx.fillStyle = hf2<.3 ? "#FF4A5E" : "#C2263A";
+          ctx.fillRect(bx2, by2, Math.round(bw2*hf2), 3);
+        }
+        continue;
       }
       var pa = sw(pl.spr);
       var clipP = pl.moving ? "walk" : "idle";
@@ -1205,7 +1275,9 @@
     var dpr = Math.min(window.devicePixelRatio||1, 2);
     canvas.width = Math.max(320, Math.round(rect.width*dpr));
     canvas.height = Math.max(200, Math.round(rect.height*dpr));
-    baseZoom = clamp(canvas.width/980, .75, 1.8);
+    // el mundo visible se mantiene constante: en una pantalla grande no se
+    // ve más mapa, se ve lo mismo pero más grande
+    baseZoom = clamp(canvas.width/860, .8, 3.2);
     zoom = baseZoom;
   };
   G.startRun = function(slots, stgKey){

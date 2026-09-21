@@ -901,6 +901,28 @@
   $("resumeBtn").addEventListener("click", function(){ G.state.paused=false; hide("pausecard"); lastT=performance.now(); });
   $("chestBtn").addEventListener("click", closeChest);
   (function(){
+    var btn = $("fsBtn"), sc = screenEl;
+    if(!btn || !sc) return;
+    function enPantallaCompleta(){
+      return document.fullscreenElement === sc || document.webkitFullscreenElement === sc;
+    }
+    btn.addEventListener("click", function(){
+      if(enPantallaCompleta()){
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        var f = sc.requestFullscreen || sc.webkitRequestFullscreen;
+        if(f) f.call(sc);
+      }
+    });
+    function ajusta(){
+      btn.textContent = enPantallaCompleta() ? "Salir de pantalla completa" : "Pantalla completa";
+      // el lienzo tiene que volver a medirse: ha cambiado de tamaño
+      setTimeout(function(){ G.resize(); }, 60);
+    }
+    document.addEventListener("fullscreenchange", ajusta);
+    document.addEventListener("webkitfullscreenchange", ajusta);
+  })();
+  (function(){
     var inp = $("hunterName");
     if(!inp) return;
     try{ inp.value = localStorage.getItem("verrath.cazador") || ""; }catch(e){}
@@ -985,7 +1007,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v15";
+  var BUILD = "v16";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;

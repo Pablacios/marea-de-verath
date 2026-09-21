@@ -94,6 +94,24 @@
   V.RETRATOS = {viuda:1, farolero:1, sepulturero:1, nina:1, coleccionista:1,
                 penitente:1, cantora:1, alquimista:1, titiritero:1, cuerva:1};
 
+  /* Pose pintada de cuerpo entero para la partida. Se carga aparte; hasta
+     que llega, el héroe se dibuja con su sprite de píxeles, así que el
+     juego arranca al instante aunque la red vaya lenta. */
+  V.HEROART = {};
+  (function(){
+    for(var k in V.RETRATOS){
+      (function(key){
+        var img = new Image();
+        img.decoding = "async";
+        img.onload = function(){ V.HEROART[key] = img; };
+        img.src = "arte/pose_" + key + ".webp";
+      })(k);
+    }
+  })();
+  /* Cuánto más grande se dibuja el héroe que su tamaño de colisión. No
+     toca la cámara: el mapa se sigue viendo igual, solo destaca él. */
+  V.HERO_SCALE = 1.9;
+
   /* ================= PASIVOS =================
      Réplica del modelo de estadísticas: cada uno toca una estadística global
      que luego multiplica a todas las armas. */
