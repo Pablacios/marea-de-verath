@@ -36,7 +36,7 @@
      progreso te siga a cualquier dispositivo. */
   var cazador = "", syncT = 0;
   function saveMeta(){
-    try{ localStorage.setItem("verrath.v2", JSON.stringify({bank:bank, bless:V.meta})); }catch(e){}
+    guardaLocal();
     pushPerfil();
   }
   function pushPerfil(){
@@ -51,10 +51,58 @@
   function hunterState(t){
     var el = $("hunterState");
     if(el) el.textContent = t;
+    var p = $("playerState");
+    if(p && !$("playercard").hidden) p.textContent = t;
   }
+  /* Cada jugador guarda su partida aparte, en su propia casilla del
+     navegador. Antes había una sola, compartida: al escribir otro nombre
+     se arrastraban el oro y las bendiciones del anterior —se mezclaba con
+     Math.max— y encima se subían al servidor a nombre del nuevo. Dos
+     hermanos en el mismo ordenador se pisaban la partida. */
+  function casilla(nombre){ return nombre ? ("verrath.v2:" + nombre) : "verrath.v2"; }
+
+  function guardaLocal(){
+    try{ localStorage.setItem(casilla(cazador), JSON.stringify({bank:bank, bless:V.meta})); }catch(e){}
+  }
+  function cargaLocal(nombre){
+    try{
+      var raw = localStorage.getItem(casilla(nombre));
+      if(raw){
+        var o = JSON.parse(raw);
+        if(o && typeof o.bank === "number"){ bank = o.bank; V.meta = o.bless || {}; return true; }
+      }
+    }catch(e){}
+    return false;
+  }
+
+  /* Los nombres usados en este dispositivo, para poder volver a uno con un
+     clic en vez de acordarse de cómo se escribía. */
+  function jugadores(){
+    try{
+      var a = JSON.parse(localStorage.getItem("verrath.jugadores") || "[]");
+      return Object.prototype.toString.call(a) === "[object Array]" ? a : [];
+    }catch(e){ return []; }
+  }
+  function recuerdaJugador(nombre){
+    if(!nombre) return;
+    var a = jugadores(), i = a.indexOf(nombre);
+    if(i >= 0) a.splice(i, 1);
+    a.unshift(nombre);
+    try{ localStorage.setItem("verrath.jugadores", JSON.stringify(a.slice(0, 8))); }catch(e){}
+  }
+  U.jugadores = jugadores;
+
   function pullPerfil(nombre){
+    var cambio = (nombre !== cazador);
     cazador = nombre;
     try{ localStorage.setItem("verrath.cazador", nombre); }catch(e){}
+    if(cambio){
+      // partida limpia de ESTE jugador, no lo que hubiera en memoria
+      bank = 0; V.meta = {};
+      cargaLocal(nombre);
+      recuerdaJugador(nombre);
+      renderShop(); U.sync(); quienJuega();
+    }
     if(!nombre){ hunterState("solo en este dispositivo"); return; }
     if(!V.net || !V.net.perfilDisponible()){
       hunterState("sin servidor: se guarda solo aquí");
@@ -64,26 +112,37 @@
     V.net.cargarPerfil(nombre, function(j, err){
       if(err || !j){ hunterState("no se pudo leer; sigue en local"); return; }
       if(!j.nuevo){
-        // se toma siempre lo mayor de cada cosa: nada se pierde
+        /* Aquí sí se toma lo mayor de cada cosa, porque los dos lados son
+           del mismo jugador: lo de este navegador y lo del servidor. */
         bank = Math.max(bank, j.bank||0);
         var b = j.bless || {};
         for(var k in b) V.meta[k] = Math.max(V.meta[k]||0, b[k]||0);
-        try{ localStorage.setItem("verrath.v2", JSON.stringify({bank:bank, bless:V.meta})); }catch(e){}
+        guardaLocal();
         renderShop(); U.sync();
       }
       hunterState("sincronizado como " + nombre);
+      quienJuega();
       pushPerfil();
     });
   }
   U.setCazador = pullPerfil;
   function loadMeta(){
-    try{
-      var raw = localStorage.getItem("verrath.v2");
-      if(raw){
-        var o = JSON.parse(raw);
-        if(o && typeof o.bank === "number"){ bank = o.bank; V.meta = o.bless || {}; }
-      }
-    }catch(e){ bank = 0; V.meta = {}; }
+    var quien = "";
+    try{ quien = localStorage.getItem("verrath.cazador") || ""; }catch(e){}
+    cazador = quien;
+    bank = 0; V.meta = {};
+    /* Si ya jugaba antes de que existieran las casillas por nombre, su
+       partida está en la vieja "verrath.v2" a secas: se recoge y se pasa a
+       la suya, para que nadie pierda lo que tenía. */
+    if(!cargaLocal(quien) && quien){
+      try{
+        var raw = localStorage.getItem("verrath.v2");
+        if(raw){
+          var o = JSON.parse(raw);
+          if(o && typeof o.bank === "number"){ bank = o.bank; V.meta = o.bless || {}; guardaLocal(); }
+        }
+      }catch(e){}
+    }
   }
 
   /* ---------------- entrada ---------------- */
@@ -1021,20 +1080,89 @@
     document.addEventListener("fullscreenchange", ajusta);
     document.addEventListener("webkitfullscreenchange", ajusta);
   })();
-  (function(){
-    var inp = $("hunterName");
-    if(!inp) return;
-    try{ inp.value = localStorage.getItem("verrath.cazador") || ""; }catch(e){}
-    if(inp.value) pullPerfil(inp.value.trim().toLowerCase());
-    $("hunterSync").addEventListener("click", function(){
-      var v = (inp.value||"").trim().toLowerCase();
-      if(v && !/^[a-z0-9 _-]{2,24}$/.test(v)){
-        hunterState("entre 2 y 24 letras o números");
-        return;
-      }
-      pullPerfil(v);
+  /* ---------------- quién juega ----------------
+     El nombre estaba escondido dentro del Santuario, junto a un botón que
+     decía "Sincronizar": había que entrar a la tienda para enterarse de que
+     existía, y lo que decía no se parecía a lo que hacía. Ahora se pregunta
+     de frente la primera vez, y luego se cambia desde el menú. */
+  function quienJuega(){
+    var el = $("quienNombre");
+    if(el) el.textContent = cazador || "invitado";
+    var sq = $("shopQuien");
+    if(sq) sq.textContent = cazador || "invitado";
+  }
+  U.quienJuega = quienJuega;
+
+  function pintaJugadores(){
+    var caja = $("playerList"), cont = $("playerNames");
+    if(!caja || !cont) return;
+    var a = jugadores().filter(function(n){ return n && n !== cazador; });
+    if(!a.length){ caja.hidden = true; cont.innerHTML = ""; return; }
+    caja.hidden = false;
+    cont.innerHTML = a.map(function(n){
+      return '<button type="button" data-j="' + n.replace(/"/g,"&quot;") + '">' + n + '</button>';
+    }).join("");
+    var bs = cont.querySelectorAll("button");
+    for(var i=0;i<bs.length;i++) bs[i].addEventListener("click", function(){
+      aplicaNombre(this.getAttribute("data-j"));
     });
+  }
+
+  function abrePerfil(){
+    var inp = $("playerName");
+    if(inp) inp.value = cazador || "";
+    var st = $("playerState");
+    if(st) st.textContent = "";
+    pintaJugadores();
+    show("playercard");
+    if(inp) setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 40);
+  }
+  U.abrePerfil = abrePerfil;
+
+  function aplicaNombre(v){
+    v = (v||"").trim().toLowerCase();
+    var st = $("playerState");
+    if(v && !/^[a-z0-9 _-]{2,24}$/.test(v)){
+      if(st) st.textContent = "Entre 2 y 24 letras, números, espacio, guion o guion bajo.";
+      return;
+    }
+    pullPerfil(v);
+    hide("playercard");
+  }
+
+  (function(){
+    var inp = $("playerName");
+    if(!inp) return;
+    $("playerGo").addEventListener("click", function(){ aplicaNombre(inp.value); });
+    inp.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter"){ ev.preventDefault(); aplicaNombre(inp.value); }
+    });
+    $("playerSkip").addEventListener("click", function(){
+      // sin nombre se juega igual; el progreso se queda en este navegador
+      pullPerfil("");
+      hide("playercard");
+    });
+    var carga = $("loadPlayerBtn");
+    if(carga) carga.addEventListener("click", abrePerfil);
+
+    // el Santuario ya no pide el nombre: solo dice quién es y abre esta misma
+    var sp = $("shopPlayer");
+    if(sp) sp.addEventListener("click", function(){ hide("shopcard"); abrePerfil(); });
   })();
+
+  /* Se llama al final del arranque, no al cargar el archivo: loadMeta() ya
+     ha dejado puesto el jugador guardado y su partida, y aquí solo queda
+     sincronizar con el servidor o preguntar si es la primera vez. */
+  U.iniciaPerfil = function(){
+    quienJuega();
+    if(cazador){ pullPerfil(cazador); return; }
+    var visto = false;
+    try{ visto = localStorage.getItem("verrath.presentado") === "1"; }catch(e){}
+    if(!visto){
+      try{ localStorage.setItem("verrath.presentado", "1"); }catch(e){}
+      abrePerfil();
+    }
+  };
 
   window.addEventListener("keydown", function(ev){
     keys[ev.key]=true;
@@ -1106,7 +1234,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v29";
+  var BUILD = "v30";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;
@@ -1243,6 +1371,7 @@
     });
     if(V.net) V.net.init(renderRoom);
     renderRoom();
+    U.iniciaPerfil();
     lastT=performance.now();
     requestAnimationFrame(loop);
   };

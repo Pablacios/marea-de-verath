@@ -223,6 +223,19 @@
   /* los iconos son pixel art: se escalan sin suavizar y nunca pasan de su caja */
   .icn{image-rendering:pixelated;image-rendering:crisp-edges;
     width:100%;height:100%;object-fit:contain;display:block}
+  /* quién juega */
+  .quienjuega{margin-top:9px;font-size:12.5px;color:var(--bone-dim);text-align:center}
+  .quienjuega b{color:var(--gold);font-weight:600}
+  .pstate{min-height:17px;margin-top:9px;font-size:12px;color:var(--bone-dim);text-align:center}
+  .plist{margin-top:6px;text-align:center}
+  .plist .plabel{display:block;font-size:11.5px;color:var(--bone-dim);
+    letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+  .pnames{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:4px}
+  .pnames button{font-family:var(--body);font-size:12.5px;cursor:pointer;
+    background:#14111E;color:var(--bone);border:1px solid var(--edge);
+    border-radius:2px;padding:5px 11px}
+  .pnames button:hover{border-color:var(--gold);color:var(--gold)}
+  #playercard .cuenta input{width:18ch;font-size:15px;text-align:center}
   .cuenta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
     background:var(--panel);border:1px solid var(--edge);border-radius:3px;padding:8px 12px}
   .cuenta input{font-family:var(--body);font-size:13px;width:14ch;background:#0C0A14;
@@ -373,12 +386,37 @@
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         <button class="act" id="startBtn">Salir a cazar</button>
         <button class="act ghost" id="shopBtn">Santuario</button>
+        <button class="act ghost" id="loadPlayerBtn">Cargar jugador</button>
       </div>
+      <div class="quienjuega">Juegas como <b id="quienNombre">invitado</b></div>
       <div class="hint">
         <b style="color:var(--bone)">J1</b> <kbd>WASD</kbd> o <kbd>←↑↓→</kbd> ·
         <b style="color:var(--bone)">J2</b> <kbd>IJKL</kbd> ·
         <b style="color:var(--bone)">Mandos</b> stick izquierdo · <kbd>P</kbd> pausa ·
         pulsa un botón del mando para unirte, incluso a mitad de partida
+      </div>
+    </div>
+
+    <!-- Quién juega. Sale sola la primera vez y se vuelve a abrir desde
+         "Cargar jugador". El nombre es la llave del progreso: con él, el
+         oro y las bendiciones te siguen a cualquier dispositivo. -->
+    <div class="overlay" id="playercard" hidden>
+      <div class="eyebrow">Marea de Verrath</div>
+      <h2>¿Quién juega?</h2>
+      <p>Tu nombre guarda el oro y las bendiciones, y te las devuelve en
+         cualquier dispositivo. Puedes cambiarlo cuando quieras.</p>
+      <div class="cuenta">
+        <span class="clabel">Nombre del jugador</span>
+        <input id="playerName" maxlength="24" placeholder="escribe tu nombre" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="pstate" id="playerState"></div>
+      <div class="plist" id="playerList" hidden>
+        <span class="plabel">o vuelve a uno de este dispositivo</span>
+        <div class="pnames" id="playerNames"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+        <button class="act" id="playerGo">Continuar</button>
+        <button class="act ghost" id="playerSkip">Jugar sin nombre</button>
       </div>
     </div>
 
@@ -404,9 +442,9 @@
       <p>El oro de tus cacerías compra bendiciones permanentes, para todos los héroes y todas las partidas.</p>
       <div class="shop" id="shopGrid"></div>
       <div class="cuenta">
-        <span class="clabel">Cazador</span>
-        <input id="hunterName" maxlength="24" placeholder="tu nombre" autocomplete="off">
-        <button class="joinbtn" id="hunterSync">Sincronizar</button>
+        <span class="clabel">Jugador</span>
+        <b id="shopQuien">invitado</b>
+        <button class="joinbtn" id="shopPlayer">Cambiar</button>
         <span class="hstate" id="hunterState">solo en este dispositivo</span>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
@@ -457,19 +495,19 @@
   </div>
 </div>
 
-<script src="sprites.js?v=29"></script>
-<script src="icons.js?v=29"></script>
-<script src="foes.js?v=29"></script>
-<script src="props.js?v=29"></script>
-<script src="texturas.js?v=29"></script>
-<script src="props64.js?v=29"></script>
-<script src="world.js?v=29"></script>
-<script src="data.js?v=29"></script>
-<script src="weapons.js?v=29"></script>
-<script src="arcana.js?v=29"></script>
-<script src="engine.js?v=29"></script>
-<script src="net.js?v=29"></script>
-<script src="ui.js?v=29"></script>
+<script src="sprites.js?v=30"></script>
+<script src="icons.js?v=30"></script>
+<script src="foes.js?v=30"></script>
+<script src="props.js?v=30"></script>
+<script src="texturas.js?v=30"></script>
+<script src="props64.js?v=30"></script>
+<script src="world.js?v=30"></script>
+<script src="data.js?v=30"></script>
+<script src="weapons.js?v=30"></script>
+<script src="arcana.js?v=30"></script>
+<script src="engine.js?v=30"></script>
+<script src="net.js?v=30"></script>
+<script src="ui.js?v=30"></script>
 <script>
 (function(){
   function start(saved){ V.ui.boot(saved || {}); }
