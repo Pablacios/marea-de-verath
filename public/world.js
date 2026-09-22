@@ -125,20 +125,17 @@
     g.drawImage(img, Math.round(x + (T - img.width)/2),
                      Math.round(y + T - img.height + (oy || 10)));
   }
-  function arbolDe(n){
-    return V.arbolTenido ? V.arbolTenido(n, curStage) : (V.arbol ? V.arbol(n) : null);
-  }
   function tree(g,P,x,y){
     var lista = (V.ARBOL_POR_ESCENARIO || {})[curStage];
     if(lista && V.arbol){
       var n = lista[hi(Math.round(x/T)*7+3, Math.round(y/T)*11+5, lista.length)];
-      var img = arbolDe(n);
+      var img = V.arbol(n);
       if(img){ stampImg(g, img, x, y); return; }
     }
     stamp(g,"arbol",x,y);
   }
   function deadTree(g,P,x,y){
-    var img = arbolDe(9);                       // el seco, para los camposantos
+    var img = V.arbol ? V.arbol(9) : null;      // el seco, para los camposantos
     if(img){ stampImg(g, img, x, y); return; }
     stamp(g,"arbolSeco",x,y);
   }
@@ -399,7 +396,7 @@
       if(d > .84) tuft(g,P,px3,py3,d);
       else if(d > .78) flower(g,P,px3,py3,d);
       else if(d > .73) pebbles(g,P,px3,py3);
-      else if(d < .022) bush(g,P,px3,py3);
+      else if(d < .035) bush(g,P,px3,py3);
     }
     return c;
   }
@@ -449,24 +446,16 @@
       tx = baseX+2; ty = baseY+3;
       var ok = true;
       for(i=0;i<4;i++) for(j=0;j<3;j++) if(isRoad(tx+i,ty+j)) ok=false;
-      /* Orden de profundidad: primero lo que queda detrás de la casa
-         —el muro del fondo y los dos laterales—, después la casa, y al
-         final el muro de delante. El tejado sube medio bloque por encima
-         de su parcela, así que si el cercado se pintara entero al final
-         el muro del fondo le cruzaría el tejado por la mitad. */
-      var rem2, j2;
-      for(i=-1;i<=4;i++){
-        rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
-        if(free(tx+i,ty-1)) fenceH(g,P,px(tx+i),py(ty-1),rem2);
-      }
-      for(j2=0;j2<3;j2++){
-        if(free(tx-1,ty+j2)) fenceV(g,P,px(tx-1),py(ty+j2));
-        if(free(tx+4,ty+j2)) fenceV(g,P,px(tx+4),py(ty+j2));
-      }
       if(ok) house(g,P,px(tx),py(ty),T*4,T*3);
+      // cercado alrededor de la casa
       for(i=-1;i<=4;i++){
-        rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
+        var rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
+        if(free(tx+i,ty-1)) fenceH(g,P,px(tx+i),py(ty-1),rem2);
         if(free(tx+i,ty+3)) fenceH(g,P,px(tx+i),py(ty+3),rem2);
+      }
+      for(j=0;j<3;j++){
+        if(free(tx-1,ty+j)) fenceV(g,P,px(tx-1),py(ty+j));
+        if(free(tx+4,ty+j)) fenceV(g,P,px(tx+4),py(ty+j));
       }
       if(free(baseX+6,baseY+6)) (stageKey==="catedral"?candle:lamp)(g,P,px(baseX+6),py(baseY+6));
     }
@@ -484,7 +473,7 @@
       }
       for(i=1;i<w-1;i++) for(j=1;j<h;j++){
         var n=h2(tx+i*3,ty+j*7);
-        if(n>.86 && free(tx+i,ty+j)) bush(g,P,px(tx+i),py(ty+j));
+        if(n>.80 && free(tx+i,ty+j)) bush(g,P,px(tx+i),py(ty+j));
         else if(n<.10 && free(tx+i,ty+j)) rock(g,P,px(tx+i),py(ty+j),1);
       }
     }
@@ -493,12 +482,8 @@
         tx=baseX+i; ty=baseY+j;
         var n2=h2(tx*5+2, ty*9+4);
         if(!free(tx,ty)) continue;
-        /* Los árboles dibujados miden casi tres baldosas de alto: con la
-           densidad de antes la arboleda era un muro de copas y no se veía
-           ni al jugador. Uno de cada cinco baldosas es suficiente para
-           que se lea como bosque. */
-        if(n2 > .82) tree(g,P,px(tx),py(ty));
-        else if(n2 > .72) bush(g,P,px(tx),py(ty));
+        if(n2 > .62) tree(g,P,px(tx),py(ty), n2>.86);
+        else if(n2 > .54) bush(g,P,px(tx),py(ty));
       }
     }
     else if(type === "cementerio"){
@@ -509,7 +494,7 @@
         if(i%2===0 && j%2===0){
           if(n3>.55) grave(g,P,px(tx),py(ty));
           else if(n3>.30) cross(g,P,px(tx),py(ty));
-        } else if(n3>.955) deadTree(g,P,px(tx),py(ty));
+        } else if(n3>.90) deadTree(g,P,px(tx),py(ty));
       }
     }
     else if(type === "cultivo"){
@@ -535,7 +520,7 @@
         else if(stageKey==="bosque" && n4>.92) hanged(g,P,px(tx),py(ty));
         else if(n4>.965 && i%3===1 && j%3===1) ruin(g,P,px(tx),py(ty));
         else if(n4>.88) rock(g,P,px(tx),py(ty));
-        else if(n4>.86) deadTree(g,P,px(tx),py(ty));
+        else if(n4>.74) deadTree(g,P,px(tx),py(ty));
         else if(n4<.03) well(g,P,px(tx),py(ty));
       }
     }

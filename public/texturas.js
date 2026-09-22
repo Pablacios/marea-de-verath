@@ -208,6 +208,47 @@
     return reduce(gr, T, T);
   }
 
+  /* ---------------- teñido ----------------
+     Los dibujos que llegan en archivo vienen en tonos cálidos o grises
+     neutros. Se les pasa el color del distrito manteniendo el valor y se
+     bajan de luz, que es lo que hace que el suelo se quede detrás de los
+     personajes en vez de competir con ellos. */
+  V.tinta = function(img, color, fuerza, velo, veloAlfa){
+    var c = lienzo(img.width, img.height), g = c.getContext("2d");
+    g.drawImage(img, 0, 0);
+    if(color && fuerza > 0){
+      g.globalCompositeOperation = "color";
+      g.globalAlpha = fuerza;
+      g.fillStyle = color;
+      g.fillRect(0, 0, c.width, c.height);
+    }
+    /* El velo va encima, no multiplicando: además de oscurecer, aplana el
+       contraste interno. Es lo que hace que el suelo deje de competir con
+       las lápidas y los enemigos en vez de solo ponerse más oscuro. */
+    if(velo && veloAlfa > 0){
+      g.globalCompositeOperation = "source-over";
+      g.globalAlpha = veloAlfa;
+      g.fillStyle = velo;
+      g.fillRect(0, 0, c.width, c.height);
+    }
+    // la transparencia original manda: el teñido no debe rellenar el vacío
+    g.globalCompositeOperation = "destination-in";
+    g.globalAlpha = 1;
+    g.drawImage(img, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    return c;
+  };
+
+  /* Cómo se tiñe cada distrito: color, fuerza y cuánto se oscurece. */
+  /* El suelo va oscuro y bien teñido a propósito. Con el dibujo original
+     —piedra clara y cálida— el distrito perdía su color y, sobre todo,
+     las lápidas y los enemigos dejaban de recortarse contra el fondo. */
+  V.TINTE_MAPA = {
+    distrito: {c:"#4E4864", f:0.58, v:"#1B1828", a:0.40},
+    bosque:   {c:"#4E7038", f:0.58, v:"#16200F", a:0.42},
+    catedral: {c:"#565082", f:0.58, v:"#1E1B33", a:0.40}
+  };
+
   /* ---------------- juego de texturas por distrito ---------------- */
   var cache = {};
   V.tex = {
@@ -215,6 +256,24 @@
        vea la rejilla, sin gastar memoria en docenas de baldosas. */
     juego: function(stageKey, P){
       if(cache[stageKey]) return cache[stageKey];
+      /* Si las baldosas dibujadas ya cargaron, manda el dibujo. Cubren
+         96 píxeles de mundo —tres baldosas— así que la piedra se ve a su
+         tamaño y no reducida a migas. */
+      var t = V.TINTE_MAPA[stageKey] || V.TINTE_MAPA.distrito;
+      var pi = V.mapArt && V.mapArt("tex_piedra");
+      var la = V.mapArt && V.mapArt("tex_ladrillo");
+      if(pi && la){
+        cache[stageKey] = {
+          dibujado: true,
+          lado: pi.width,
+          suelo:  [V.tinta(pi, t.c, t.f, t.v, t.a)],
+          camino: [V.tinta(la, t.c, t.f, t.v, t.a * 0.86)],
+          plaza:  V.tinta(la, t.c, t.f, t.v, t.a * 0.76),
+          tierra: tierra(P, 3000),
+          muro:   empedrado(P, 4000, {filas: 4, temblor: .30, junta: .075, base: P.stone})
+        };
+        return cache[stageKey];
+      }
       var suelo = [], camino = [], i;
       /* Las cuatro variantes cambian de reparto de piedra, no de tinte:
          en cuanto cambia el color base se ve la cuadrícula de baldosas. */

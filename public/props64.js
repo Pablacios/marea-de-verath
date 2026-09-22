@@ -672,23 +672,6 @@
     return c;
   }
 
-  /* ---------------- árboles teñidos ----------------
-     Los árboles eran lo único del mapa que se dibujaba en crudo, y por eso
-     saltaban en verde vivo sobre un suelo morado de noche. Reciben el
-     mismo tinte flojo que el resto del mobiliario, con un poco más de
-     velo: son masa de fondo, no un elemento que haya que mirar. */
-  var arbolCache = {};
-  V.olvidaArboles = function(){ arbolCache = {}; };
-  V.arbolTenido = function(n, stageKey){
-    var img = V.arbol ? V.arbol(n) : null;
-    if(!img || !V.tinta) return img;
-    var k = stageKey + "#" + n;
-    if(arbolCache[k]) return arbolCache[k];
-    var t = (V.TINTE_MAPA || {})[stageKey] || {c:"#4E4864", f:0.58, v:"#1B1828", a:0.40};
-    arbolCache[k] = V.tinta(img, t.c, t.f * 0.62, t.v, t.a * 0.42);
-    return arbolCache[k];
-  };
-
   /* Se llama desde buildProps, después de las piezas de texto: las que
      están aquí pisan a la versión antigua del mismo nombre. */
   V.buildProps64 = function(stageKey, P){
@@ -718,7 +701,7 @@
     alta(pre + "cruz",     junto(cruz(P)));
     alta(pre + "pozo",     junto(pozo(P)));
     alta(pre + "columna",  junto(columna(P)));
-    alta(pre + "muroV",    deArchivo("p_muro_v", stageKey) || junto(muro(P, true)));
+    alta(pre + "muroV",    junto(muro(P, true)));
     alta(pre + "arco",     junto(arco(P)));
     var dib = casaDibujada(stageKey);
     alta(pre + "casa", dib || casa(P));

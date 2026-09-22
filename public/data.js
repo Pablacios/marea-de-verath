@@ -150,23 +150,17 @@
      decorado. Cuando entra uno nuevo hay que tirar la caché de trozos del
      mundo: si no, los trozos ya dibujados se quedan sin él. */
   V.ARBOLES = {};
-  /* Solo los lúgubres: los dos robles oscuros, el pino y el seco. El
-     otoñal, la acacia, el cerezo y el manzano se quedaron fuera —eran los
-     que rompían el tono del juego. Una clave repetida sale más veces, que
-     es como se pesa el reparto sin más código. */
   V.ARBOL_POR_ESCENARIO = {
-    distrito: [2, 6, 1, 9],      // roble, roble doble, pino y algún seco
-    bosque:   [9, 9, 2, 1],      // el Bosque del Ahorcado va casi todo seco
-    catedral: [1, 9, 9, 2]       // pino y seco, que es lo que pega al mármol
+    distrito: [2, 6, 1, 8],      // robles y pinos de barrio
+    bosque:   [3, 5, 8, 9],      // otoño, acacia, el manzano y el seco
+    catedral: [4, 1, 9]          // cerezo pálido, pino y el seco
   };
   (function(){
-    // solo se descargan los que se usan
-    [1, 2, 6, 9].forEach(function(n){
+    [1,2,3,4,5,6,8,9].forEach(function(n){
       var img = new Image();
       img.decoding = "async";
       img.onload = function(){
         V.ARBOLES[n] = img;
-        if(V.olvidaArboles) V.olvidaArboles();
         if(V.world && V.world.reset) V.world.reset();
       };
       img.src = "arte/arbol_" + n + ".webp";
@@ -199,7 +193,7 @@
   V.MAPART = {};
   (function(){
     var piezas = ["tex_piedra","tex_ladrillo","p_lapida","p_muro",
-                  "p_muro_fin","p_muro_v","p_matorral","p_farola"];
+                  "p_muro_fin","p_matorral","p_farola"];
     for(var i=0;i<piezas.length;i++) (function(n){
       var img = new Image();
       img.decoding = "async";
@@ -207,7 +201,6 @@
         V.MAPART[n] = img;
         if(V.tex && V.tex.olvida) V.tex.olvida();
         if(V.olvidaProps) V.olvidaProps();
-        if(V.olvidaArboles) V.olvidaArboles();
         if(V.world && V.world.reset) V.world.reset();
       };
       img.src = "arte/" + n + ".webp";
