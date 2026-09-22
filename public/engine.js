@@ -957,6 +957,51 @@
     blancos[key] = c;
     return c;
   }
+  /* ---------------- sombra de silueta ----------------
+     Una mancha ovalada no dice nada de quién la proyecta. La sombra de
+     verdad es la propia figura, en negro plano y aplastada contra el
+     suelo: se le ve la pose, los brazos abiertos, la capa. Se guarda una
+     silueta por sprite —no por fotograma— y se dibuja aplastada en el
+     momento, así que no cuesta memoria y sirve para cualquier escala. */
+  var oscuros = {};
+  function siluetaOscura(key, img){
+    if(oscuros[key]) return oscuros[key];
+    var c = document.createElement("canvas");
+    c.width = img.width; c.height = img.height;
+    var g = c.getContext("2d");
+    /* Se desenfoca aquí, una sola vez por sprite, no en cada cuadro: la
+       sombra debe insinuar la pose, no dibujar los dedos. */
+    var r = Math.max(1, Math.round(img.height / 42));
+    if(typeof g.filter === "string") g.filter = "blur(" + r + "px)";
+    g.drawImage(img, 0, 0);
+    g.filter = "none";
+    g.globalCompositeOperation = "source-in";
+    g.fillStyle = "#000000";
+    g.fillRect(0, 0, c.width, c.height);
+    oscuros[key] = c;
+    return c;
+  }
+  /* Dibuja la sombra bajo una figura. (sx,sy,sw,sh) recorta el fotograma
+     dentro de la imagen; (cx, pie) es dónde apoya, en coordenadas de
+     mundo; (ancho, alto) el tamaño al que se dibuja la figura. */
+  V.SOMBRA = { on: true, alfa: 0.55, aplasta: 0.30, sube: 0.26 };
+  function sombraDe(key, img, sx, sy, sw, sh, cx, pie, ancho, alto, flip){
+    var S = V.SOMBRA;
+    if(!S.on) return;
+    var sil = siluetaOscura(key, img);
+    var hs = alto * S.aplasta;                  // qué aplastada queda
+    ctx.save();
+    ctx.globalAlpha = S.alfa;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "low";
+    ctx.translate(cx, pie);
+    if(flip) ctx.scale(-1, 1);
+    ctx.drawImage(sil, sx, sy, sw, sh, -ancho/2, -hs*S.sube, ancho, hs);
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = 1;
+  }
+
   /* Vista según hacia dónde camina: de frente si baja, de espaldas si sube,
      de lado si va en horizontal. La última vista se recuerda al pararse. */
   function vistaDe(pl){
@@ -990,20 +1035,16 @@
     var ancho = alto * (cel / tira.height);
     var lateral = (vista === "lado");
 
-    ctx.save();
-    ctx.globalAlpha = 0.30;
-    ctx.fillStyle = "#06040E";
-    ctx.beginPath();
-    ctx.ellipse(pl.x, pl.y + 9, base * 0.24, 4.2, 0, 0, 6.283);
-    ctx.fill();
-    ctx.restore();
+    var mira = V.miraLado ? V.miraLado(pl.hero) : 1;
+    var voltea = lateral && (pl.face || 1) * mira < 0;
+    sombraDe("s#"+pl.hero+vista, tira, i*cel, 0, cel, tira.height,
+             pl.x, pl.y + 9, ancho, alto, voltea);
 
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.translate(pl.x, pl.y + 9);
-    var mira = V.miraLado ? V.miraLado(pl.hero) : 1;
-    if(lateral && (pl.face || 1) * mira < 0) ctx.scale(-1, 1);
+    if(voltea) ctx.scale(-1, 1);
     if(pl.iframe > 0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha = .5;
     ctx.drawImage(tira, i*cel, 0, cel, tira.height, -ancho/2, -alto, ancho, alto);
     if(pl.hurt > 0){
@@ -1028,14 +1069,9 @@
     var onda = (lateral ? 1.1 : 0.7) * mov;
     var bob = 0, aplasta = 1, lean = 0;
 
-    // sombra de contacto: se estrecha cuando el cuerpo sube
-    ctx.save();
-    ctx.globalAlpha = 0.30;
-    ctx.fillStyle = "#06040E";
-    ctx.beginPath();
-    ctx.ellipse(pl.x, pl.y + 9, ancho*0.30, 4.2, 0, 0, 6.283);
-    ctx.fill();
-    ctx.restore();
+    var mira0 = V.miraLado ? V.miraLado(pl.hero) : 1;
+    sombraDe("s#"+pl.hero+vista, img, 0, 0, img.width, img.height,
+             pl.x, pl.y + 9, ancho, alto, lateral && (pl.face || 1) * mira0 < 0);
 
     ctx.save();
     ctx.imageSmoothingEnabled = true;
@@ -1170,16 +1206,14 @@
         var tw = runT*7 + fo.wob;
         var aire = fo.freeze > 0 ? 0 : Math.abs(Math.sin(tw)) * alto * 0.035;
         var apl  = fo.freeze > 0 ? 1 : 1 + Math.sin(tw*2) * 0.035;
+        sombraDe("e#"+fo.type, pin, 0, 0, pin.width, pin.height,
+                 Math.round(fo.x), Math.round(fo.y + fo.r*0.9),
+                 ancho, alto, fo.face < 0);
         ctx.save();
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
         ctx.translate(Math.round(fo.x), Math.round(fo.y + fo.r*0.9));
         if(fo.face < 0) ctx.scale(-1, 1);
-        ctx.globalAlpha = 0.28;
-        ctx.fillStyle = "#06040E";
-        ctx.beginPath();
-        ctx.ellipse(0, 0, ancho*0.30, Math.max(2, alto*0.055), 0, 0, 6.283);
-        ctx.fill();
         ctx.globalAlpha = fo.freeze > 0 ? .75 : 1;
         var iw = ancho/apl, ih = alto*apl;
         var img2 = fo.hit > 0 ? siluetaBlanca("e#"+fo.type, pin) : pin;
@@ -1208,6 +1242,8 @@
       // anclado por los pies: la sombra del sprite se apoya en el suelo
       var foot = Math.round(fo.r*0.9);
       var px=Math.round(fo.x-dw/2), py=Math.round(fo.y-dh+foot);
+      sombraDe("p#"+fo.def.spr, spr, 0, 0, spr.width, spr.height,
+               Math.round(fo.x), Math.round(fo.y+foot), dw, dh, fo.face < 0);
       if(fo.freeze>0){ ctx.globalAlpha=.75; }
       if(fo.face<0){
         ctx.save(); ctx.translate(Math.round(fo.x),Math.round(fo.y)); ctx.scale(-1,1);
@@ -1283,6 +1319,8 @@
       var frame = pl.moving ? Math.floor(pl.walk*1.6) : Math.floor(runT*2.4);
       var ps = pl.hurt>0 ? V.spriteHit(pl.spr) : V.sprite(pl.spr, frame, clipP);
       var pw = ps.width/pa, phh = ps.height/pa;
+      sombraDe("p#"+pl.spr, ps, 0, 0, ps.width, ps.height,
+               Math.round(pl.x), Math.round(pl.y)+9, pw, phh, pl.face < 0);
       if(pl.iframe>0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha=.45;
       ctx.save(); ctx.translate(Math.round(pl.x), Math.round(pl.y));
       if(pl.face<0) ctx.scale(-1,1);
