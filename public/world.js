@@ -446,16 +446,24 @@
       tx = baseX+2; ty = baseY+3;
       var ok = true;
       for(i=0;i<4;i++) for(j=0;j<3;j++) if(isRoad(tx+i,ty+j)) ok=false;
-      if(ok) house(g,P,px(tx),py(ty),T*4,T*3);
-      // cercado alrededor de la casa
+      /* Orden de profundidad: primero lo que queda detrás de la casa
+         —el muro del fondo y los dos laterales—, después la casa, y al
+         final el muro de delante. El tejado sube medio bloque por encima
+         de su parcela, así que si el cercado se pintara entero al final
+         el muro del fondo le cruzaría el tejado por la mitad. */
+      var rem2, j2;
       for(i=-1;i<=4;i++){
-        var rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
+        rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
         if(free(tx+i,ty-1)) fenceH(g,P,px(tx+i),py(ty-1),rem2);
-        if(free(tx+i,ty+3)) fenceH(g,P,px(tx+i),py(ty+3),rem2);
       }
-      for(j=0;j<3;j++){
-        if(free(tx-1,ty+j)) fenceV(g,P,px(tx-1),py(ty+j));
-        if(free(tx+4,ty+j)) fenceV(g,P,px(tx+4),py(ty+j));
+      for(j2=0;j2<3;j2++){
+        if(free(tx-1,ty+j2)) fenceV(g,P,px(tx-1),py(ty+j2));
+        if(free(tx+4,ty+j2)) fenceV(g,P,px(tx+4),py(ty+j2));
+      }
+      if(ok) house(g,P,px(tx),py(ty),T*4,T*3);
+      for(i=-1;i<=4;i++){
+        rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
+        if(free(tx+i,ty+3)) fenceH(g,P,px(tx+i),py(ty+3),rem2);
       }
       if(free(baseX+6,baseY+6)) (stageKey==="catedral"?candle:lamp)(g,P,px(baseX+6),py(baseY+6));
     }

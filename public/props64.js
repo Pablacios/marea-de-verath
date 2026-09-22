@@ -701,7 +701,7 @@
     alta(pre + "cruz",     junto(cruz(P)));
     alta(pre + "pozo",     junto(pozo(P)));
     alta(pre + "columna",  junto(columna(P)));
-    alta(pre + "muroV",    junto(muro(P, true)));
+    alta(pre + "muroV",    deArchivo("p_muro_v", stageKey) || junto(muro(P, true)));
     alta(pre + "arco",     junto(arco(P)));
     var dib = casaDibujada(stageKey);
     alta(pre + "casa", dib || casa(P));

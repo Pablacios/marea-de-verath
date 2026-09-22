@@ -193,7 +193,7 @@
   V.MAPART = {};
   (function(){
     var piezas = ["tex_piedra","tex_ladrillo","p_lapida","p_muro",
-                  "p_muro_fin","p_matorral","p_farola"];
+                  "p_muro_fin","p_muro_v","p_matorral","p_farola"];
     for(var i=0;i<piezas.length;i++) (function(n){
       var img = new Image();
       img.decoding = "async";

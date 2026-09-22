@@ -1097,7 +1097,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v24";
+  var BUILD = "v25";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;
