@@ -1159,6 +1159,46 @@
         }
         continue;
       }
+      /* Si el bicho tiene dibujo, se usa ese: se escala a partir de su
+         radio de colisión para que el tamaño en pantalla siga a lo que de
+         verdad ocupa, y lleva un contoneo corto para no parecer una
+         estatua (las hojas traen una sola pose, no tira de pasos). */
+      var pin = V.bicho ? V.bicho(fo.type) : null;
+      if(pin){
+        var alto = fo.r * 3.45 * ((V.FOE_SCALE || 1.55) / 1.55);
+        var ancho = alto * (pin.width / pin.height);
+        var tw = runT*7 + fo.wob;
+        var aire = fo.freeze > 0 ? 0 : Math.abs(Math.sin(tw)) * alto * 0.035;
+        var apl  = fo.freeze > 0 ? 1 : 1 + Math.sin(tw*2) * 0.035;
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.translate(Math.round(fo.x), Math.round(fo.y + fo.r*0.9));
+        if(fo.face < 0) ctx.scale(-1, 1);
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = "#06040E";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, ancho*0.30, Math.max(2, alto*0.055), 0, 0, 6.283);
+        ctx.fill();
+        ctx.globalAlpha = fo.freeze > 0 ? .75 : 1;
+        var iw = ancho/apl, ih = alto*apl;
+        var img2 = fo.hit > 0 ? siluetaBlanca("e#"+fo.type, pin) : pin;
+        ctx.drawImage(img2, -iw/2, -ih - aire, iw, ih);
+        ctx.restore();
+        ctx.imageSmoothingEnabled = false;
+        ctx.globalAlpha = 1;
+        if(fo.freeze > 0){
+          ctx.fillStyle = "rgba(124,198,255,.45)";
+          ctx.fillRect(fo.x-ancho/2, fo.y+fo.r*0.9-alto, ancho, 3);
+          ctx.fillRect(fo.x-ancho/2, fo.y+fo.r*0.9-3, ancho, 3);
+        }
+        if(fo.def.elite || fo.def.reaper){
+          var fr2 = clamp(fo.hp/fo.maxhp, 0, 1);
+          ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(fo.x-26, fo.y-fo.r-16, 52, 6);
+          ctx.fillStyle = "#C2263A"; ctx.fillRect(fo.x-26, fo.y-fo.r-16, 52*fr2, 6);
+        }
+        continue;
+      }
       var fa = sw(fo.def.spr) / (V.FOE_SCALE || 1);
       var clip = fo.freeze > 0 ? "idle" : "walk";
       if(fo.hit>0) spr = V.spriteHit(fo.def.spr);

@@ -116,7 +116,9 @@
     }
     for(var k in V.RETRATOS){
       for(var i=0;i<VISTAS.length;i++) carga(k, VISTAS[i], "arte/v_"+k+"_"+VISTAS[i]+".webp");
-      carga(k, "pose", "arte/pose_"+k+".webp");
+      // los que tienen tira de pasos no llevan pose suelta: pedirla solo
+      // dejaba un 404 por héroe en la consola
+      if(!V.CAMINATAS[k]) carga(k, "pose", "arte/pose_"+k+".webp");
     }
   })();
 
@@ -165,6 +167,38 @@
     });
   })();
   V.arbol = function(n){ return V.ARBOLES[n] || null; };
+
+  /* ---------------- enemigos pintados ----------------
+     Un dibujo por enemigo, de sus hojas. Mientras no llega, se dibuja el
+     sprite de píxeles, así que la partida arranca sin esperar a la red. */
+  V.BICHOS = {};
+  (function(){
+    var claves = ["aldeano","sabueso","cuervo","bruto","ahorcado","lobo","monja",
+                  "gargola","elite","segadora","osario","murcielago","vampirillo",
+                  "encapuchado","cenagoso","zarzal","devoradora","centinela",
+                  "heraldo","forjado"];
+    for(var i=0;i<claves.length;i++) (function(k){
+      var img = new Image();
+      img.decoding = "async";
+      img.onload = function(){ V.BICHOS[k] = img; };
+      img.src = "arte/e_" + k + ".webp";
+    })(claves[i]);
+  })();
+  V.bicho = function(k){ return V.BICHOS[k] || null; };
+
+  /* La casa dibujada. Se tiñe por distrito en props64, que es donde se
+     arma el mobiliario. */
+  V.CASA = null;
+  (function(){
+    var img = new Image();
+    img.decoding = "async";
+    img.onload = function(){
+      V.CASA = img;
+      if(V.olvidaCasa) V.olvidaCasa();
+      if(V.world && V.world.reset) V.world.reset();
+    };
+    img.src = "arte/casa.webp";
+  })();
   /* Hacia dónde mira la vista de lado tal como vino dibujada en la hoja.
      La mayoría están de perfil hacia la izquierda; dos miran a la derecha.
      El motor voltea la figura solo cuando la marcha no coincide con esto,
@@ -269,6 +303,17 @@
     monja:    {hp:40,  speed:62, dmg:15, r:11, spr:"f_monja",   xp:2, gold:.09},
     gargola:  {hp:150, speed:56, dmg:24, r:14, spr:"f_gargola", xp:5, gold:.18},
     elite:    {hp:1500,speed:50, dmg:34, r:28, spr:"f_elite",   xp:70, gold:1, elite:true},
+    /* ---- los diez nuevos, de las hojas pintadas ---- */
+    osario:     {hp:26,  speed:70, dmg:12, r:11, spr:"f_aldeano", xp:2, gold:.08},
+    murcielago: {hp:20,  speed:120,dmg:11, r:11, spr:"f_cuervo",  xp:1, gold:.06, erratic:true},
+    vampirillo: {hp:10,  speed:132,dmg:7,  r:9,  spr:"f_cuervo",  xp:1, gold:.04, erratic:true},
+    encapuchado:{hp:60,  speed:66, dmg:18, r:12, spr:"f_monja",   xp:3, gold:.11},
+    cenagoso:   {hp:130, speed:42, dmg:22, r:15, spr:"f_bruto",   xp:5, gold:.16},
+    zarzal:     {hp:90,  speed:18, dmg:26, r:16, spr:"f_bruto",   xp:3, gold:.12},
+    devoradora: {hp:220, speed:34, dmg:30, r:18, spr:"f_gargola", xp:8, gold:.26},
+    centinela:  {hp:75,  speed:74, dmg:20, r:12, spr:"f_monja",   xp:3, gold:.12},
+    heraldo:    {hp:120, speed:80, dmg:24, r:13, spr:"f_gargola", xp:4, gold:.15},
+    forjado:    {hp:180, speed:68, dmg:28, r:14, spr:"f_gargola", xp:6, gold:.20},
     /* la "luz": el equivalente a las antorchas y candelabros rompibles del
        mapa. Es un enemigo inmóvil y sin daño para reaprovechar colisiones. */
     luz:      {hp:1,   speed:0,  dmg:0,  r:12, spr:null,        xp:0, gold:0, light:true},
@@ -294,7 +339,7 @@
       moon:"#C2263A",
       accent:"#8E1F2F",
       mods:{start:10, speed:1.00, lightChance:0.10, maxLights:10},
-      foes:["aldeano","cuervo","sabueso","ahorcado","bruto","gargola"],
+      foes:["aldeano","cuervo","osario","encapuchado","bruto","gargola"],
       deco:function(g,x,y,C,n){
         if(n > 0.955){ // farola de gas
           g.fillStyle = "#14121C"; g.fillRect(x+28, y+16, 5, 34);
@@ -322,7 +367,7 @@
       moon:"#C8D68A",
       accent:"#5A7A3A",
       mods:{start:12, speed:1.10, lightChance:0.10, maxLights:10},
-      foes:["ahorcado","cuervo","lobo","monja","bruto","gargola"],
+      foes:["vampirillo","murcielago","lobo","cenagoso","zarzal","devoradora"],
       deco:function(g,x,y,C,n){
         if(n > 0.94){ // árbol con soga
           g.fillStyle = "#1A1410"; g.fillRect(x+28, y+10, 7, 40);
@@ -349,7 +394,7 @@
       moon:"#DCD2F0",
       accent:"#8A6ECF",
       mods:{start:8,  speed:0.95, lightChance:0.14, maxLights:12},
-      foes:["monja","cuervo","ahorcado","lobo","gargola","bruto"],
+      foes:["monja","ahorcado","sabueso","centinela","heraldo","forjado"],
       deco:function(g,x,y,C,n){
         if(n > 0.95){ // columna
           g.fillStyle = "#262238"; g.fillRect(x+22, y+6, 18, 46);

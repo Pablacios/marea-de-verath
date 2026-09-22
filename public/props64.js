@@ -612,11 +612,47 @@
     };
   }
 
+  /* ---------------- la casa dibujada ----------------
+     Viene en tonos cálidos, que casan con el Distrito de Sangre pero no
+     con el bosque ni con la catedral. Para los otros dos se tiñe con el
+     color del distrito manteniendo el valor: así el dibujo sigue siendo
+     el mismo y deja de parecer pegado de otro juego. */
+  var TINTE = { bosque: "#4E7038", catedral: "#7C4EA6" };
+  function casaDibujada(stageKey){
+    if(!V.CASA) return null;
+    var im = V.CASA;
+    var c = lienzo(im.width, im.height), g = c.getContext("2d");
+    g.drawImage(im, 0, 0);
+    var t = TINTE[stageKey];
+    if(t){
+      g.globalCompositeOperation = "color";
+      g.globalAlpha = 0.42;
+      g.fillStyle = t;
+      g.fillRect(0, 0, c.width, c.height);
+      g.globalCompositeOperation = "destination-in";
+      g.globalAlpha = 1;
+      g.drawImage(im, 0, 0);
+      g.globalCompositeOperation = "source-over";
+    }
+    return c;
+  }
+  /* Cuando llega el dibujo hay que tirar lo que ya estaba montado. */
+  V.olvidaCasa = function(){
+    for(var k in V.px.bank) if(/_casa$/.test(k)) delete V.px.bank[k];
+  };
+
   /* Se llama desde buildProps, después de las piezas de texto: las que
      están aquí pisan a la versión antigua del mismo nombre. */
   V.buildProps64 = function(stageKey, P){
     var pre = "p_" + stageKey + "_";
-    if(V.px.bank[pre + "arco"]) return;            // ya hecho este distrito
+    if(V.px.bank[pre + "arco"]){
+      // ya está el resto; solo falta colocar la casa si acaba de cargar
+      if(!V.px.bank[pre + "casa"]){
+        var d2 = casaDibujada(stageKey);
+        alta(pre + "casa", d2 || casa(P));
+      }
+      return;
+    }
     alta(pre + "matorral", matorral(P));
     alta(pre + "farola",   farola(P));
     alta(pre + "roca",     roca(P));
@@ -627,6 +663,7 @@
     alta(pre + "muroH",    muro(P, false));
     alta(pre + "muroV",    muro(P, true));
     alta(pre + "arco",     arco(P));
-    alta(pre + "casa",     casa(P));
+    var dib = casaDibujada(stageKey);
+    alta(pre + "casa", dib || casa(P));
   };
 })();
