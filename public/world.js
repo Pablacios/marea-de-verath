@@ -97,7 +97,7 @@
   // Los elementos son sprites de píxeles, no cajas: el motor les da contorno,
   // luz desde arriba-izquierda y sombra, igual que a los personajes.
   var curStage = "distrito";
-  function stamp(g, name, x, y, mode, ox, oy){
+  function stamp(g, name, x, y, mode, ox, oy, espejo){
     var key = "p_"+curStage+"_"+name;
     var s = V.sprite(key, 0);
     if(!s) return;
@@ -108,6 +108,14 @@
     var dy = mode === "center"
       ? Math.round(y + (T - sh)/2 + (oy||0))
       : Math.round(y + T - sh + 5 + (oy||0));
+    if(espejo){
+      g.save();
+      g.translate(dx + sw, dy);
+      g.scale(-1, 1);
+      g.drawImage(s, 0, 0, sw, sh);
+      g.restore();
+      return;
+    }
     g.drawImage(s, dx, dy, sw, sh);
   }
   /* Un árbol dibujado se estampa a su tamaño natural, con el tronco
@@ -117,17 +125,20 @@
     g.drawImage(img, Math.round(x + (T - img.width)/2),
                      Math.round(y + T - img.height + (oy || 10)));
   }
+  function arbolDe(n){
+    return V.arbolTenido ? V.arbolTenido(n, curStage) : (V.arbol ? V.arbol(n) : null);
+  }
   function tree(g,P,x,y){
     var lista = (V.ARBOL_POR_ESCENARIO || {})[curStage];
     if(lista && V.arbol){
       var n = lista[hi(Math.round(x/T)*7+3, Math.round(y/T)*11+5, lista.length)];
-      var img = V.arbol(n);
+      var img = arbolDe(n);
       if(img){ stampImg(g, img, x, y); return; }
     }
     stamp(g,"arbol",x,y);
   }
   function deadTree(g,P,x,y){
-    var img = V.arbol ? V.arbol(9) : null;      // el seco, para los camposantos
+    var img = arbolDe(9);                       // el seco, para los camposantos
     if(img){ stampImg(g, img, x, y); return; }
     stamp(g,"arbolSeco",x,y);
   }
@@ -135,8 +146,15 @@
   function rock(g,P,x,y){ stamp(g,"roca",x,y); }
   /* Los cercados son ahora muro de piedra con remate; si el muro no está
      (distrito recién cargado), se usa la valla de madera de antes. */
-  function fenceH(g,P,x,y){
-    stamp(g, V.px.bank["p_"+curStage+"_muroH"] ? "muroH" : "vallaH", x, y, "center", 0, 4);
+  function fenceH(g,P,x,y,remate){
+    var hayMuro = !!V.px.bank["p_"+curStage+"_muroH"];
+    /* Los extremos de un tramo llevan la pieza con hiedra, que es la que
+       cierra el muro; el resto repite el trozo liso. */
+    if(hayMuro && remate && V.px.bank["p_"+curStage+"_muroFin"]){
+      stamp(g, "muroFin", x, y, "center", remate > 0 ? 3 : -3, 4, remate < 0);
+      return;
+    }
+    stamp(g, hayMuro ? "muroH" : "vallaH", x, y, "center", 0, 4);
   }
   function fenceV(g,P,x,y){
     stamp(g, V.px.bank["p_"+curStage+"_muroV"] ? "muroV" : "vallaV", x, y, "center", 0, 4);
@@ -267,6 +285,61 @@
     var ox = cx*CH, oy = cy*CH;
 
     var TX = V.tex ? V.tex.juego(stageKey, P) : null;
+    var mundoX = ox*T, mundoY = oy*T;
+
+    /* Rellena una zona con una baldosa dibujada, alineada con el mundo:
+       el patrón se ancla a coordenadas absolutas, así que la piedra
+       continúa de un trozo al siguiente sin junta ni salto. */
+    function relleno(img){
+      var pat = g.createPattern(img, "repeat");
+      if(!pat) return false;
+      var L = img.width;
+      var dx = -(((mundoX % L) + L) % L), dy = -(((mundoY % L) + L) % L);
+      g.save();
+      g.translate(dx, dy);
+      g.fillStyle = pat;
+      g.fillRect(0, 0, CHPX + L, CHPX + L);
+      g.restore();
+      return true;
+    }
+
+    if(TX && TX.dibujado){
+      // 1. suelo de una pasada
+      relleno(TX.suelo[0]);
+      // alguna calva de tierra, para que no sea piedra de punta a punta
+      for(var yc=0; yc<CH; yc++) for(var xc=0; xc<CH; xc++){
+        if(h2(ox+xc, oy+yc) > .955){
+          g.globalAlpha = .22;
+          g.drawImage(TX.tierra, xc*T, yc*T);
+          g.globalAlpha = 1;
+        }
+      }
+      // 2. caminos: se recortan las baldosas de calle y se rellenan con
+      //    el ladrillo; una sola máscara para todas
+      var hayCamino = false;
+      g.save();
+      g.beginPath();
+      for(var yr=0; yr<CH; yr++) for(var xr=0; xr<CH; xr++){
+        if(!isRoad(ox+xr, oy+yr)) continue;
+        g.rect(xr*T, yr*T, T, T);
+        hayCamino = true;
+      }
+      if(hayCamino){
+        g.clip();
+        relleno(TX.camino[0]);
+      }
+      g.restore();
+      // bordillo y sombra en los cantos del camino
+      for(var yb=0; yb<CH; yb++) for(var xb=0; xb<CH; xb++){
+        var tb=ox+xb, ub=oy+yb;
+        if(!isRoad(tb,ub)) continue;
+        var pxb=xb*T, pyb=yb*T;
+        if(!isRoad(tb,ub-1)) rect(g,P.roadL,pxb,pyb,T,2);
+        if(!isRoad(tb,ub+1)) rect(g,P.roadD,pxb,pyb+T-3,T,3);
+        if(!isRoad(tb-1,ub)) rect(g,P.roadD,pxb,pyb,2,T);
+        if(!isRoad(tb+1,ub)) rect(g,P.roadD,pxb+T-2,pyb,2,T);
+      }
+    } else {
 
     // 1. suelo: empedrado generado, cuatro variantes para romper la rejilla
     for(var y=0; y<CH; y++) for(var x=0; x<CH; x++){
@@ -308,6 +381,7 @@
       if(!isRoad(tx2,ty2-1)) rect(g,P.roadL,px,py,T,2);
       if(!isRoad(tx2,ty2+1)) rect(g,P.roadD,px,py+T-3,T,3);
     }
+    }
 
     // 3. parcelas (con margen: lo que asoma de bloques vecinos también se pinta)
     for(var by=cy-1; by<=cy+1; by++) for(var bx=cx-1; bx<=cx+1; bx++){
@@ -325,7 +399,7 @@
       if(d > .84) tuft(g,P,px3,py3,d);
       else if(d > .78) flower(g,P,px3,py3,d);
       else if(d > .73) pebbles(g,P,px3,py3);
-      else if(d < .035) bush(g,P,px3,py3);
+      else if(d < .022) bush(g,P,px3,py3);
     }
     return c;
   }
@@ -340,7 +414,19 @@
       for(var qi=1; qi<7; qi++) for(var qj=1; qj<7; qj++){
         if(isRoad(qx+qi, qy+qj)) continue;
         var ppx=(qx+qi-ox)*T, ppy=(qy+qj-oy)*T;
-        if(TXP){ g.drawImage(TXP.plaza, ppx, ppy); continue; }
+        if(TXP){
+          if(TXP.dibujado){
+            /* La plaza usa la misma baldosa, anclada al mundo: si se
+               dibujara desde la esquina de cada casilla se vería la
+               rejilla de 32 en medio del empedrado. */
+            var LP = TXP.plaza.width;
+            var wx = (qx+qi)*T, wy = (qy+qj)*T;
+            g.save(); g.beginPath(); g.rect(ppx, ppy, T, T); g.clip();
+            g.drawImage(TXP.plaza, ppx - (((wx % LP)+LP)%LP), ppy - (((wy % LP)+LP)%LP));
+            g.restore();
+          } else g.drawImage(TXP.plaza, ppx, ppy);
+          continue;
+        }
         rect(g, P.roadD, ppx, ppy, T, T);
         rect(g, P.road, ppx+1, ppy+1, T-2, T-2);
         rect(g, P.roadL, ppx+2, ppy+2, 12, 1);
@@ -363,15 +449,24 @@
       tx = baseX+2; ty = baseY+3;
       var ok = true;
       for(i=0;i<4;i++) for(j=0;j<3;j++) if(isRoad(tx+i,ty+j)) ok=false;
-      if(ok) house(g,P,px(tx),py(ty),T*4,T*3);
-      // cercado alrededor de la casa
+      /* Orden de profundidad: primero lo que queda detrás de la casa
+         —el muro del fondo y los dos laterales—, después la casa, y al
+         final el muro de delante. El tejado sube medio bloque por encima
+         de su parcela, así que si el cercado se pintara entero al final
+         el muro del fondo le cruzaría el tejado por la mitad. */
+      var rem2, j2;
       for(i=-1;i<=4;i++){
-        if(free(tx+i,ty-1)) fenceH(g,P,px(tx+i),py(ty-1));
-        if(free(tx+i,ty+3)) fenceH(g,P,px(tx+i),py(ty+3));
+        rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
+        if(free(tx+i,ty-1)) fenceH(g,P,px(tx+i),py(ty-1),rem2);
       }
-      for(j=0;j<3;j++){
-        if(free(tx-1,ty+j)) fenceV(g,P,px(tx-1),py(ty+j));
-        if(free(tx+4,ty+j)) fenceV(g,P,px(tx+4),py(ty+j));
+      for(j2=0;j2<3;j2++){
+        if(free(tx-1,ty+j2)) fenceV(g,P,px(tx-1),py(ty+j2));
+        if(free(tx+4,ty+j2)) fenceV(g,P,px(tx+4),py(ty+j2));
+      }
+      if(ok) house(g,P,px(tx),py(ty),T*4,T*3);
+      for(i=-1;i<=4;i++){
+        rem2 = i===-1 ? -1 : (i===4 ? 1 : 0);
+        if(free(tx+i,ty+3)) fenceH(g,P,px(tx+i),py(ty+3),rem2);
       }
       if(free(baseX+6,baseY+6)) (stageKey==="catedral"?candle:lamp)(g,P,px(baseX+6),py(baseY+6));
     }
@@ -379,8 +474,9 @@
       var w = 5, h = 4;
       tx = baseX+1; ty = baseY+2;
       for(i=0;i<w;i++){
-        if(free(tx+i,ty)) fenceH(g,P,px(tx+i),py(ty));
-        if(free(tx+i,ty+h)) fenceH(g,P,px(tx+i),py(ty+h));
+        var rem = i===0 ? -1 : (i===w-1 ? 1 : 0);
+        if(free(tx+i,ty)) fenceH(g,P,px(tx+i),py(ty),rem);
+        if(free(tx+i,ty+h)) fenceH(g,P,px(tx+i),py(ty+h),rem);
       }
       for(j=1;j<h;j++){
         if(free(tx,ty+j)) fenceV(g,P,px(tx),py(ty+j));
@@ -388,7 +484,7 @@
       }
       for(i=1;i<w-1;i++) for(j=1;j<h;j++){
         var n=h2(tx+i*3,ty+j*7);
-        if(n>.80 && free(tx+i,ty+j)) bush(g,P,px(tx+i),py(ty+j));
+        if(n>.86 && free(tx+i,ty+j)) bush(g,P,px(tx+i),py(ty+j));
         else if(n<.10 && free(tx+i,ty+j)) rock(g,P,px(tx+i),py(ty+j),1);
       }
     }
@@ -397,8 +493,12 @@
         tx=baseX+i; ty=baseY+j;
         var n2=h2(tx*5+2, ty*9+4);
         if(!free(tx,ty)) continue;
-        if(n2 > .62) tree(g,P,px(tx),py(ty), n2>.86);
-        else if(n2 > .54) bush(g,P,px(tx),py(ty));
+        /* Los árboles dibujados miden casi tres baldosas de alto: con la
+           densidad de antes la arboleda era un muro de copas y no se veía
+           ni al jugador. Uno de cada cinco baldosas es suficiente para
+           que se lea como bosque. */
+        if(n2 > .82) tree(g,P,px(tx),py(ty));
+        else if(n2 > .72) bush(g,P,px(tx),py(ty));
       }
     }
     else if(type === "cementerio"){
@@ -409,7 +509,7 @@
         if(i%2===0 && j%2===0){
           if(n3>.55) grave(g,P,px(tx),py(ty));
           else if(n3>.30) cross(g,P,px(tx),py(ty));
-        } else if(n3>.90) deadTree(g,P,px(tx),py(ty));
+        } else if(n3>.955) deadTree(g,P,px(tx),py(ty));
       }
     }
     else if(type === "cultivo"){
@@ -435,7 +535,7 @@
         else if(stageKey==="bosque" && n4>.92) hanged(g,P,px(tx),py(ty));
         else if(n4>.965 && i%3===1 && j%3===1) ruin(g,P,px(tx),py(ty));
         else if(n4>.88) rock(g,P,px(tx),py(ty));
-        else if(n4>.74) deadTree(g,P,px(tx),py(ty));
+        else if(n4>.86) deadTree(g,P,px(tx),py(ty));
         else if(n4<.03) well(g,P,px(tx),py(ty));
       }
     }

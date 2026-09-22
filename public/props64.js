@@ -624,21 +624,69 @@
     var c = lienzo(im.width, im.height), g = c.getContext("2d");
     g.drawImage(im, 0, 0);
     var t = TINTE[stageKey];
+    var tm = (V.TINTE_MAPA || {})[stageKey];
     if(t){
       g.globalCompositeOperation = "color";
       g.globalAlpha = 0.42;
       g.fillStyle = t;
       g.fillRect(0, 0, c.width, c.height);
-      g.globalCompositeOperation = "destination-in";
-      g.globalAlpha = 1;
-      g.drawImage(im, 0, 0);
-      g.globalCompositeOperation = "source-over";
     }
+    if(tm){                      // mismo velo que el resto del mobiliario
+      g.globalCompositeOperation = "source-over";
+      g.globalAlpha = tm.a * 0.26;
+      g.fillStyle = tm.v;
+      g.fillRect(0, 0, c.width, c.height);
+    }
+    g.globalCompositeOperation = "destination-in";
+    g.globalAlpha = 1;
+    g.drawImage(im, 0, 0);
+    g.globalCompositeOperation = "source-over";
     return c;
   }
-  /* Cuando llega el dibujo hay que tirar lo que ya estaba montado. */
+  /* Cuando llega un dibujo hay que tirar lo que ya estaba montado. */
   V.olvidaCasa = function(){
     for(var k in V.px.bank) if(/_casa$/.test(k)) delete V.px.bank[k];
+  };
+  V.olvidaProps = function(){
+    for(var k in V.px.bank) if(/^p_/.test(k)) delete V.px.bank[k];
+  };
+
+  /* ---------------- piezas que vienen en archivo ----------------
+     Se tiñen con el color del distrito igual que el suelo, para que un
+     muro de piedra caliza no cante en la Catedral Pálida. La fuerza es
+     algo menor que en el suelo: el mobiliario puede permitirse resaltar
+     un punto más, que para eso está encima. */
+  function deArchivo(nombre, stageKey){
+    var img = V.mapArt ? V.mapArt(nombre) : null;
+    if(!img || !V.tinta) return null;
+    /* El mobiliario se tiñe menos y se queda bastante más claro que el
+       suelo: es lo que hace que una lápida se lea como lápida y no como
+       una mancha sobre el empedrado. */
+    /* El mobiliario NO lleva velo: se queda a su brillo, que es lo que le
+       permite recortarse contra un suelo oscuro. Solo se le pasa el color
+       del distrito, flojo, y se le pone el contorno del resto de piezas,
+       que es lo que de verdad lo despega del empedrado. */
+    var t = (V.TINTE_MAPA || {})[stageKey] || {c:"#4E4864", f:0.58};
+    var c = V.tinta(img, t.c, t.f * 0.45, null, 0);
+    contorno(c, "#0A0812");
+    return c;
+  }
+
+  /* ---------------- árboles teñidos ----------------
+     Los árboles eran lo único del mapa que se dibujaba en crudo, y por eso
+     saltaban en verde vivo sobre un suelo morado de noche. Reciben el
+     mismo tinte flojo que el resto del mobiliario, con un poco más de
+     velo: son masa de fondo, no un elemento que haya que mirar. */
+  var arbolCache = {};
+  V.olvidaArboles = function(){ arbolCache = {}; };
+  V.arbolTenido = function(n, stageKey){
+    var img = V.arbol ? V.arbol(n) : null;
+    if(!img || !V.tinta) return img;
+    var k = stageKey + "#" + n;
+    if(arbolCache[k]) return arbolCache[k];
+    var t = (V.TINTE_MAPA || {})[stageKey] || {c:"#4E4864", f:0.58, v:"#1B1828", a:0.40};
+    arbolCache[k] = V.tinta(img, t.c, t.f * 0.62, t.v, t.a * 0.42);
+    return arbolCache[k];
   };
 
   /* Se llama desde buildProps, después de las piezas de texto: las que
@@ -653,16 +701,25 @@
       }
       return;
     }
-    alta(pre + "matorral", matorral(P));
-    alta(pre + "farola",   farola(P));
-    alta(pre + "roca",     roca(P));
-    alta(pre + "lapida",   lapida(P));
-    alta(pre + "cruz",     cruz(P));
-    alta(pre + "pozo",     pozo(P));
-    alta(pre + "columna",  columna(P));
-    alta(pre + "muroH",    muro(P, false));
-    alta(pre + "muroV",    muro(P, true));
-    alta(pre + "arco",     arco(P));
+    /* Las piezas de código se calientan y se bajan de luz hacia la piedra
+       de los dibujos: si no, una cruz gris azulada canta al lado de una
+       lápida de piedra caliza. */
+    function junto(cv){
+      return V.tinta ? V.tinta(cv, "#6E5B44", 0.30, "#1E1A2A", 0.26) : cv;
+    }
+    /* Donde hay dibujo, manda el dibujo; donde no, la pieza de código. */
+    alta(pre + "matorral", deArchivo("p_matorral", stageKey) || matorral(P));
+    alta(pre + "farola",   deArchivo("p_farola",   stageKey) || farola(P));
+    alta(pre + "lapida",   deArchivo("p_lapida",   stageKey) || lapida(P));
+    alta(pre + "muroH",    deArchivo("p_muro",     stageKey) || muro(P, false));
+    var fin = deArchivo("p_muro_fin", stageKey);
+    if(fin) alta(pre + "muroFin", fin);
+    alta(pre + "roca",     junto(roca(P)));
+    alta(pre + "cruz",     junto(cruz(P)));
+    alta(pre + "pozo",     junto(pozo(P)));
+    alta(pre + "columna",  junto(columna(P)));
+    alta(pre + "muroV",    deArchivo("p_muro_v", stageKey) || junto(muro(P, true)));
+    alta(pre + "arco",     junto(arco(P)));
     var dib = casaDibujada(stageKey);
     alta(pre + "casa", dib || casa(P));
   };
