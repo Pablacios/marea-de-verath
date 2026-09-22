@@ -152,15 +152,18 @@
 
   /* ficha del cazador elegido */
   .hpanel{padding:13px 14px;display:flex;flex-direction:column;gap:6px;text-align:center}
-  .hp-port{height:210px;display:grid;place-items:center;overflow:hidden;border-radius:2px;
+  .hp-port{flex:1 1 auto;min-height:190px;display:grid;place-items:center;overflow:hidden;border-radius:2px;
     border:1px solid #14100D;
     background:
       radial-gradient(76% 62% at 50% 26%, color-mix(in srgb, var(--c) 26%, #171222) 0%, #0A0812 100%);
     box-shadow:inset 0 0 0 1px rgba(226,200,138,.22),inset 0 0 40px rgba(0,0,0,.7)}
   /* los retratos son pintura, no pixel art: aquí sí se interpola */
-  .hp-port img{height:202px;width:auto;max-width:100%;object-fit:contain;image-rendering:auto;
+  /* contenida y centrada: si el panel se encoge, la figura se encoge con él
+     en vez de salirse del marco y quedar cortada */
+  .hp-port img{width:100%;height:100%;object-fit:contain;object-position:center;
+    image-rendering:auto;padding:6px;
     filter:drop-shadow(0 6px 14px rgba(0,0,0,.65))}
-  .hp-port img.pix{image-rendering:pixelated;height:168px}
+  .hp-port img.pix{image-rendering:pixelated;padding:14px}
   .hp-name{font-family:var(--display);font-size:19px;letter-spacing:.05em;color:var(--c);
     text-shadow:0 0 18px color-mix(in srgb, var(--c) 40%, transparent)}
   .hp-role{font-size:12px;color:#B9AE93;line-height:1.35}
@@ -179,18 +182,18 @@
   /* los recuadros se estiran para llenar el panel: cuanto más sitio hay,
      más grande se ve cada cazador */
   .tiles{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;
-    flex:1;grid-auto-rows:minmax(104px,1fr)}
+    flex:1;grid-auto-rows:min-content;align-content:start}
   .tile{cursor:pointer;font-family:var(--body);padding:4px 3px 5px;border-radius:3px;
     display:flex;flex-direction:column;align-items:center;gap:3px;min-height:0;
     color:#9A907A;border:1px solid #14100D;
     background:linear-gradient(180deg,#312B23,#1B1713);
     box-shadow:inset 0 1px 0 rgba(255,238,196,.12),inset 0 -1px 0 rgba(0,0,0,.5)}
-  .tile .tp{width:100%;flex:1;min-height:0;border-radius:2px;display:grid;place-items:center;
+  .tile .tp{width:100%;aspect-ratio:1/1.08;flex:none;border-radius:2px;display:grid;place-items:center;
     overflow:hidden;background:radial-gradient(70% 60% at 50% 30%,#1B1526 0%,#09070F 100%);
     border:1px solid #14100D}
-  .tile .tp img{width:100%;height:100%;object-fit:contain;object-position:top center;
-    image-rendering:auto}
-  .tile .tp img.pix{image-rendering:pixelated;width:auto;height:84%}
+  .tile .tp img{width:100%;height:100%;object-fit:contain;object-position:center;
+    image-rendering:auto;padding:3px}
+  .tile .tp img.pix{image-rendering:pixelated;padding:8px}
   .tile .tn{font-size:10.5px;line-height:1.12;letter-spacing:.02em;text-align:center;
     min-height:2.24em;display:grid;place-items:center;flex:none}
   .tile:hover{color:#E9DFC6;border-color:#6B5A38}
@@ -315,8 +318,7 @@
 
   @media (max-width:900px){
     .selbody{grid-template-columns:1fr}
-    .hp-port{height:190px}
-    .hp-port img{height:184px}
+    .hp-port{min-height:170px}
     .tiles{grid-template-columns:repeat(5,1fr)}
   }
   @media (max-width:820px){
@@ -455,17 +457,17 @@
   </div>
 </div>
 
-<script src="sprites.js?v=19"></script>
-<script src="icons.js?v=19"></script>
-<script src="foes.js?v=19"></script>
-<script src="props.js?v=19"></script>
-<script src="world.js?v=19"></script>
-<script src="data.js?v=19"></script>
-<script src="weapons.js?v=19"></script>
-<script src="arcana.js?v=19"></script>
-<script src="engine.js?v=19"></script>
-<script src="net.js?v=19"></script>
-<script src="ui.js?v=19"></script>
+<script src="sprites.js?v=21"></script>
+<script src="icons.js?v=21"></script>
+<script src="foes.js?v=21"></script>
+<script src="props.js?v=21"></script>
+<script src="world.js?v=21"></script>
+<script src="data.js?v=21"></script>
+<script src="weapons.js?v=21"></script>
+<script src="arcana.js?v=21"></script>
+<script src="engine.js?v=21"></script>
+<script src="net.js?v=21"></script>
+<script src="ui.js?v=21"></script>
 <script>
 (function(){
   function start(saved){ V.ui.boot(saved || {}); }

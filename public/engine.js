@@ -975,6 +975,46 @@
      pies, con la amplitud creciendo hacia abajo. Eso balancea el faldón y
      las piernas; encima va el rebote del cuerpo y una compresión en el
      apoyo. De lado se nota como zancada; de frente, como contoneo. */
+  /* ---------------- caminata dibujada ----------------
+     Los héroes cuyas hojas traían la tira de pasos se animan con los
+     fotogramas de verdad: la tira es una fila de celdas cuadradas, así que
+     el número de pasos sale de dividir su ancho entre su alto. La figura
+     va centrada en la celda y apoyada en el borde de abajo, y se dibuja al
+     tamaño que hace que mida lo mismo que su pose quieta. */
+  function dibujaHeroeTira(pl, tira, quieto, vista){
+    var n = Math.max(1, Math.round(tira.width / tira.height));
+    var cel = tira.width / n;
+    var i = pl.moving ? (Math.floor(pl.walk * 0.95) % n + n) % n : 0;
+    var base = 30 * (V.HERO_SCALE || 1.9);
+    var alto = base * (tira.height / Math.max(1, quieto.height));
+    var ancho = alto * (cel / tira.height);
+    var lateral = (vista === "lado");
+
+    ctx.save();
+    ctx.globalAlpha = 0.30;
+    ctx.fillStyle = "#06040E";
+    ctx.beginPath();
+    ctx.ellipse(pl.x, pl.y + 9, base * 0.24, 4.2, 0, 0, 6.283);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.translate(pl.x, pl.y + 9);
+    var mira = V.miraLado ? V.miraLado(pl.hero) : 1;
+    if(lateral && (pl.face || 1) * mira < 0) ctx.scale(-1, 1);
+    if(pl.iframe > 0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha = .5;
+    ctx.drawImage(tira, i*cel, 0, cel, tira.height, -ancho/2, -alto, ancho, alto);
+    if(pl.hurt > 0){
+      ctx.globalAlpha = Math.min(1, pl.hurt*4);
+      var bl = siluetaBlanca(pl.hero + "#" + vista, tira);
+      ctx.drawImage(bl, i*cel, 0, cel, tira.height, -ancho/2, -alto, ancho, alto);
+    }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+  }
+
   function dibujaHeroePintado(pl, img, vista){
     var alto = 30 * (V.HERO_SCALE || 1.9);
     var ancho = alto * (img.width / img.height);
@@ -1175,7 +1215,11 @@
       var vistaP = vistaDe(pl);
       var pintado = V.vistaHeroe ? V.vistaHeroe(pl.hero, vistaP) : null;
       if(pintado){
-        dibujaHeroePintado(pl, pintado, vistaP);
+        /* Si su hoja traía los pasos dibujados, se usan; si no, el paso lo
+           construye el motor a partir de la pose quieta. */
+        var tiraP = V.tiraHeroe ? V.tiraHeroe(pl.hero, vistaP) : null;
+        if(tiraP) dibujaHeroeTira(pl, tiraP, pintado, vistaP);
+        else dibujaHeroePintado(pl, pintado, vistaP);
         if(players.length>1){
           ctx.fillStyle="rgba(7,6,14,.8)";
           ctx.fillRect(Math.round(pl.x)-7, Math.round(pl.y)-64, 14, 12);

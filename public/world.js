@@ -110,8 +110,27 @@
       : Math.round(y + T - sh + 5 + (oy||0));
     g.drawImage(s, dx, dy, sw, sh);
   }
-  function tree(g,P,x,y){ stamp(g,"arbol",x,y); }
-  function deadTree(g,P,x,y){ stamp(g,"arbolSeco",x,y); }
+  /* Un árbol dibujado se estampa a su tamaño natural, con el tronco
+     apoyado en el borde de abajo de la baldosa. Si aún no ha cargado, se
+     dibuja el de píxeles y el trozo se rehace cuando llegue. */
+  function stampImg(g, img, x, y, oy){
+    g.drawImage(img, Math.round(x + (T - img.width)/2),
+                     Math.round(y + T - img.height + (oy || 10)));
+  }
+  function tree(g,P,x,y){
+    var lista = (V.ARBOL_POR_ESCENARIO || {})[curStage];
+    if(lista && V.arbol){
+      var n = lista[hi(Math.round(x/T)*7+3, Math.round(y/T)*11+5, lista.length)];
+      var img = V.arbol(n);
+      if(img){ stampImg(g, img, x, y); return; }
+    }
+    stamp(g,"arbol",x,y);
+  }
+  function deadTree(g,P,x,y){
+    var img = V.arbol ? V.arbol(9) : null;      // el seco, para los camposantos
+    if(img){ stampImg(g, img, x, y); return; }
+    stamp(g,"arbolSeco",x,y);
+  }
   function bush(g,P,x,y){ stamp(g,"matorral",x,y); }
   function rock(g,P,x,y){ stamp(g,"roca",x,y); }
   function fenceH(g,P,x,y){ stamp(g,"vallaH",x,y,"center"); }

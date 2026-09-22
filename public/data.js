@@ -20,8 +20,8 @@
       hp:100, speed:114, weapon:"agua",
       mods:{ cooldown:0.90 }, grow:[{stat:"cooldown", per:10, step:-0.05}],
       note:"−10% de recarga, y −5% más cada 10 niveles" },
-    bestia:{ name:"Hija de la Bestia", spr:"h_bestia", color:"#5A3A2E", glyph:"≈",
-      role:"Sangre bestial: rápida, feroz y con el ajo pegado a la piel.",
+    bestia:{ name:"Hijo de la Bestia", spr:"h_bestia", color:"#7A3A2E", glyph:"≈",
+      role:"Sangre bestial: rápido, feroz y con el ajo pegado a la piel.",
       hp:120, speed:140, weapon:"ajo",
       mods:{ moveSpeed:1.1 }, grow:[{stat:"moveSpeed", per:10, step:0.05}],
       note:"+10% de velocidad, y +5% más cada 10 niveles" },
@@ -30,8 +30,8 @@
       hp:90, speed:118, weapon:"rayos",
       mods:{ area:1.15 }, grow:[{stat:"area", per:10, step:0.10}],
       note:"+15% de área, y +10% más cada 10 niveles" },
-    verdugo:{ name:"El Verdugo", spr:"h_verdugo", color:"#8A8A92", glyph:"⌁",
-      role:"Hachas pesadas. Poco alcance, mucho estrago.",
+    verdugo:{ name:"El Ripper", spr:"h_verdugo", color:"#B03040", glyph:"⌁",
+      role:"Cuchillas y niebla de gas. Poco alcance, mucho estrago.",
       hp:145, speed:104, weapon:"hacha",
       mods:{ might:1.15, cooldown:1.08 },
       grow:[{stat:"might", per:15, step:0.10},{stat:"armor", per:10, step:1}],
@@ -92,7 +92,10 @@
   V.HERO_KEYS = Object.keys(V.HEROES);
   /* Héroes con retrato pintado a mano en la carpeta arte/ */
   V.RETRATOS = {viuda:1, farolero:1, sepulturero:1, nina:1, coleccionista:1,
-                penitente:1, cantora:1, alquimista:1, titiritero:1, cuerva:1};
+                penitente:1, cantora:1, alquimista:1, titiritero:1, cuerva:1,
+                cazador:1, vicaria:1, doctor:1, bestia:1, astronoma:1, verdugo:1};
+  /* Héroes cuya hoja traía la caminata dibujada, fotograma a fotograma. */
+  V.CAMINATAS = {cazador:1, vicaria:1, doctor:1, bestia:1, astronoma:1, verdugo:1};
 
   /* Pose pintada de cuerpo entero para la partida. Se carga aparte; hasta
      que llega, el héroe se dibuja con su sprite de píxeles, así que el
@@ -116,13 +119,61 @@
       carga(k, "pose", "arte/pose_"+k+".webp");
     }
   })();
+
+  /* Tiras de caminata: una fila de celdas cuadradas por vista. El motor
+     deduce cuántos pasos hay dividiendo el ancho entre el alto. */
+  V.HEROCAM = {};
+  (function(){
+    var VISTAS = ["frente","espalda","lado"];
+    for(var k in V.CAMINATAS){
+      for(var i=0;i<VISTAS.length;i++) (function(key, vista){
+        var img = new Image();
+        img.decoding = "async";
+        img.onload = function(){
+          V.HEROCAM[key] = V.HEROCAM[key] || {};
+          V.HEROCAM[key][vista] = img;
+        };
+        img.src = "arte/c_"+key+"_"+vista+".webp";
+      })(k, VISTAS[i]);
+    }
+  })();
+  V.tiraHeroe = function(key, vista){
+    var t = V.HEROCAM[key];
+    return t ? (t[vista] || null) : null;
+  };
+
+  /* ---------------- arboleda pintada ----------------
+     Ocho árboles dibujados, repartidos por distrito. Se dibujan a su
+     tamaño natural y sin suavizar, que es pixel art como el resto del
+     decorado. Cuando entra uno nuevo hay que tirar la caché de trozos del
+     mundo: si no, los trozos ya dibujados se quedan sin él. */
+  V.ARBOLES = {};
+  V.ARBOL_POR_ESCENARIO = {
+    distrito: [2, 6, 1, 8],      // robles y pinos de barrio
+    bosque:   [3, 5, 8, 9],      // otoño, acacia, el manzano y el seco
+    catedral: [4, 1, 9]          // cerezo pálido, pino y el seco
+  };
+  (function(){
+    [1,2,3,4,5,6,8,9].forEach(function(n){
+      var img = new Image();
+      img.decoding = "async";
+      img.onload = function(){
+        V.ARBOLES[n] = img;
+        if(V.world && V.world.reset) V.world.reset();
+      };
+      img.src = "arte/arbol_" + n + ".webp";
+    });
+  })();
+  V.arbol = function(n){ return V.ARBOLES[n] || null; };
   /* Hacia dónde mira la vista de lado tal como vino dibujada en la hoja.
      La mayoría están de perfil hacia la izquierda; dos miran a la derecha.
      El motor voltea la figura solo cuando la marcha no coincide con esto,
      así que caminar a la derecha siempre se ve mirando a la derecha. */
   V.MIRA_LADO = {
     alquimista:-1, cantora:-1, cuerva:1,  farolero:-1, nina:-1,
-    penitente:-1,  sepulturero:-1, titiritero:1, viuda:-1, coleccionista:-1
+    penitente:-1,  sepulturero:-1, titiritero:1, viuda:-1, coleccionista:-1,
+    /* de las hojas nuevas se tomó la banda DERECHA, así que ya miran allá */
+    cazador:1, vicaria:1, doctor:1, bestia:1, astronoma:1, verdugo:1
   };
   V.miraLado = function(key){ return V.MIRA_LADO[key] === 1 ? 1 : -1; };
 
