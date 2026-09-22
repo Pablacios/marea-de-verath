@@ -253,8 +253,14 @@
     var f = {x:x,y:y,type:type,def:def,r:def.r,
       hp:hp, maxhp:hp,
       speed:def.speed * (def.reaper ? 1 : spd*Math.min(curse,2)),
-      dmg:def.dmg * (def.reaper ? 1 : (mul||1)),
+      /* El multiplicador del minuto sube la vida del enemigo a saco, pero su
+         daño solo un tercio de eso. Antes escalaba igual que la vida: en el
+         minuto 29 una gárgola pegaba 144 y te mataba de dos toques tuvieras
+         el héroe que tuvieras, así que el final de partida no lo decidía tu
+         partida sino el reloj. */
+      dmg:def.dmg * (def.reaper ? 1 : 1 + ((mul||1)-1)*0.32),
       hit:0, kx:0, ky:0, freeze:0, slow:0, dead:false, tags:null,
+      fuera:0, paciencia:RECICLA + Math.random()*2.0,
       frame:ri(0,3), wob:rf(0,6.283), nid:(++nidSeq)&65535};
     foes.push(f);
     return f;
@@ -561,8 +567,9 @@
       spawnT = 0;
       if(w.boss){
         var pt = ringPoint();
+        // spawnFoe ya aplica el multiplicador del minuto: volver a aplicarlo
+        // aquí lo elevaba al cuadrado (minuto 29: 54.000 de vida)
         var el = spawnFoe("elite", pt.x, pt.y, w.mul);
-        if(el){ el.hp *= w.mul; el.maxhp = el.hp; }
         say("Algo enorme ha despertado."); shake = 10;
         beep(100,.7,"sawtooth",.07);
       }
@@ -858,8 +865,30 @@
     }
   }
 
+  /* Cuánto aguanta un enemigo fuera de cuadro antes de reaparecer. Cada uno
+     lleva su propio plazo dentro de esa horquilla para que no reaparezcan
+     todos a la vez formando un muro. */
+  var RECICLA = 3.0;
+  /* Se le manda al borde del encuadre, con dos tercios de probabilidad por
+     delante de hacia donde caminas: la gracia es que te los encuentres, no
+     que te salgan por la espalda. */
+  function reubica(f, tgt){
+    var d = (Math.max(canvas.width, canvas.height)/zoom)*0.58;
+    var a;
+    if(tgt.moving && Math.random() < 0.66){
+      var base = Math.atan2(tgt.aimy||0, tgt.aimx||1);
+      a = base + rf(-1.15, 1.15);
+    } else a = rf(0, 6.283);
+    f.x = tgt.x + Math.cos(a)*d;
+    f.y = tgt.y + Math.sin(a)*d;
+    f.kx = 0; f.ky = 0;
+  }
+
   function updateFoes(dt){
     var pushed = 0;
+    // el encuadre, con un margen para no reciclar al que asoma medio cuerpo
+    var vistaW = canvas.width/(2*zoom) + 70;
+    var vistaH = canvas.height/(2*zoom) + 70;
     for(var e=foes.length-1;e>=0;e--){
       var f=foes[e];
       if(f.dead){ foes.splice(e,1); continue; }
@@ -872,12 +901,19 @@
       if(!tgt) continue;
       var dx=tgt.x-f.x, dy=tgt.y-f.y, dist=Math.hypot(dx,dy)||1;
       if(f.def.light){ if(dist > 1800) foes.splice(e,1); continue; }
-      if(f.def.elite || f.def.reaper){
-        // los jefes no se descartan nunca: si te alejas, reaparecen cerca
-        if(dist > 1600){ var ptb = ringPoint(); f.x=ptb.x; f.y=ptb.y; continue; }
-      } else if(dist > 1500){
-        // el resto desaparece al alejarte; el cupo del minuto los repone
-        foes.splice(e,1); continue;
+
+      /* Reciclado. El que lleva un rato fuera del encuadre no se borra
+         —borrarlo vaciaba la pantalla, porque el cupo del minuto lo seguía
+         contando como vivo— ni te persigue eternamente desde atrás: se le
+         manda al borde, delante de ti, con la vida que le quedaba. Huir no
+         cura a nadie y tampoco despeja el camino. */
+      if(Math.abs(f.x-cam.x) < vistaW && Math.abs(f.y-cam.y) < vistaH) f.fuera = 0;
+      else f.fuera += dt;
+      if(f.fuera > f.paciencia){
+        reubica(f, tgt);
+        f.fuera = 0;
+        f.paciencia = RECICLA + Math.random()*2.0;
+        continue;
       }
       var sp = f.speed * (f.slow>0?.45:1);
       if(f.def.erratic){ f.wob += dt*5; sp *= 1 + Math.sin(f.wob)*.35; }
@@ -1000,6 +1036,21 @@
     ctx.restore();
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = 1;
+  }
+
+  /* Barra de vida del jefe. Iba clavada a (y - radio - 16), que en un elite
+     de casi cien píxeles de alto caía dentro del cuerpo; ahora se apoya
+     encima del dibujo y mide lo que él mide. La Segadora no lleva: es
+     invulnerable y una barra siempre llena solo engaña. */
+  function barraJefe(fo, cima, ancho){
+    if(!fo.def.elite || fo.def.reaper) return;
+    var w = clamp(ancho, 54, 132), x = Math.round(fo.x - w/2), y = Math.round(cima) - 11;
+    var fr = clamp(fo.hp/fo.maxhp, 0, 1);
+    ctx.fillStyle = "rgba(0,0,0,.72)";  ctx.fillRect(x-1, y-1, w+2, 8);
+    ctx.fillStyle = "#3A1016";          ctx.fillRect(x, y, w, 6);
+    ctx.fillStyle = fr > .35 ? "#C2263A" : "#E8823A";
+    ctx.fillRect(x, y, Math.max(1, Math.round(w*fr)), 6);
+    ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(x, y, w, 1);
   }
 
   /* Vista según hacia dónde camina: de frente si baja, de espaldas si sube,
@@ -1226,11 +1277,7 @@
           ctx.fillRect(fo.x-ancho/2, fo.y+fo.r*0.9-alto, ancho, 3);
           ctx.fillRect(fo.x-ancho/2, fo.y+fo.r*0.9-3, ancho, 3);
         }
-        if(fo.def.elite || fo.def.reaper){
-          var fr2 = clamp(fo.hp/fo.maxhp, 0, 1);
-          ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(fo.x-26, fo.y-fo.r-16, 52, 6);
-          ctx.fillStyle = "#C2263A"; ctx.fillRect(fo.x-26, fo.y-fo.r-16, 52*fr2, 6);
-        }
+        barraJefe(fo, fo.y + fo.r*0.9 - alto - aire, ancho);
         continue;
       }
       var fa = sw(fo.def.spr) / (V.FOE_SCALE || 1);
@@ -1255,11 +1302,7 @@
         ctx.fillRect(px, py, dw, 3);
         ctx.fillRect(px, py+dh-3, dw, 3);
       }
-      if(fo.def.elite||fo.def.reaper){
-        var frac=clamp(fo.hp/fo.maxhp,0,1);
-        ctx.fillStyle="rgba(0,0,0,.65)"; ctx.fillRect(fo.x-26, fo.y-fo.r-16, 52, 6);
-        ctx.fillStyle="#C2263A"; ctx.fillRect(fo.x-26, fo.y-fo.r-16, 52*frac, 6);
-      }
+      barraJefe(fo, py, dw);
     }
 
     // proyectiles
