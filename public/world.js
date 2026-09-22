@@ -133,8 +133,14 @@
   }
   function bush(g,P,x,y){ stamp(g,"matorral",x,y); }
   function rock(g,P,x,y){ stamp(g,"roca",x,y); }
-  function fenceH(g,P,x,y){ stamp(g,"vallaH",x,y,"center"); }
-  function fenceV(g,P,x,y){ stamp(g,"vallaV",x,y,"center"); }
+  /* Los cercados son ahora muro de piedra con remate; si el muro no está
+     (distrito recién cargado), se usa la valla de madera de antes. */
+  function fenceH(g,P,x,y){
+    stamp(g, V.px.bank["p_"+curStage+"_muroH"] ? "muroH" : "vallaH", x, y, "center", 0, 4);
+  }
+  function fenceV(g,P,x,y){
+    stamp(g, V.px.bank["p_"+curStage+"_muroV"] ? "muroV" : "vallaV", x, y, "center", 0, 4);
+  }
   function grave(g,P,x,y){ stamp(g,"lapida",x,y); }
   function cross(g,P,x,y){ stamp(g,"cruz",x,y); }
   function crop(g,P,x,y){
@@ -152,19 +158,23 @@
   function column(g,P,x,y){ stamp(g,"columna",x,y,null,0,-20); }
   function hanged(g,P,x,y){ stamp(g,"colgado",x,y,null,0,-16); }
   function house(g,P,x,y,w,h){
-    // cuerpo
+    var key = "p_"+curStage+"_casa";
+    var cv = V.px.bank[key] ? V.sprite(key, 0) : null;
+    if(cv){
+      // el sprite trae el tejado por encima del hueco de la parcela
+      g.drawImage(cv, Math.round(x + (w - cv.width)/2), Math.round(y + h - cv.height + 6));
+      return;
+    }
+    // reserva: la casa de rectángulos de antes
     rect(g,P.wallD,x,y+h-46,w,46);
     rect(g,P.wall ,x+3,y+h-43,w-6,40);
-    // sillares
     for(var r=0;r<3;r++) rect(g,P.wallD, x+3, y+h-40+r*13, w-6, 2);
-    // tejado a dos aguas
     var rh = 30;
     for(var i=0;i<rh;i++){
       var inset = Math.round(i*(w/2-6)/rh);
       rect(g,(i<3?P.roofL:P.roof), x+inset, y+h-46-rh+i, w-inset*2, 1);
     }
     rect(g,P.roofD,x,y+h-48,w,3);
-    // puerta y ventanas
     var dx = x+Math.round(w/2)-10;
     rect(g,P.doorD,dx,y+h-26,20,26);
     rect(g,P.door ,dx+2,y+h-24,16,24);
@@ -174,7 +184,9 @@
     rect(g,P.winD,x+w-22,y+h-36,14,14);
     rect(g,P.win ,x+w-20,y+h-34,10,10);
   }
-  function ruin(g,P,x,y){ stamp(g,"ruina",x,y); }
+  function ruin(g,P,x,y){
+    stamp(g, V.px.bank["p_"+curStage+"_arco"] ? "arco" : "ruina", x, y, null, 0, -6);
+  }
   function tuft(g,P,x,y,n){
     stamp(g,"hierba",x,y,"center", (n*20|0)-10, (n*14|0)-6);
     if(n>.84) stamp(g,"hierba",x,y,"center", 8-(n*16|0), 6);
@@ -254,21 +266,40 @@
     var g = c.getContext("2d");
     var ox = cx*CH, oy = cy*CH;
 
-    // 1. suelo
+    var TX = V.tex ? V.tex.juego(stageKey, P) : null;
+
+    // 1. suelo: empedrado generado, cuatro variantes para romper la rejilla
     for(var y=0; y<CH; y++) for(var x=0; x<CH; x++){
       var tx=ox+x, ty=oy+y, n=h2(tx,ty);
-      rect(g, P.ground[hi(tx*3,ty*5,P.ground.length)], x*T, y*T, T, T);
-      if(n>.86){ rect(g, P.ground[0], x*T+hi(tx,ty,3)*8, y*T+hi(ty,tx,3)*8, 10, 6); }
+      if(TX){
+        g.drawImage(TX.suelo[hi(tx*3,ty*5,4)], x*T, y*T);
+        // alguna calva de tierra para que no todo sea piedra
+        if(n > .955){
+          g.globalAlpha = .26;
+          g.drawImage(TX.tierra, x*T, y*T);
+          g.globalAlpha = 1;
+        }
+      } else {
+        rect(g, P.ground[hi(tx*3,ty*5,P.ground.length)], x*T, y*T, T, T);
+        if(n>.86){ rect(g, P.ground[0], x*T+hi(tx,ty,3)*8, y*T+hi(ty,tx,3)*8, 10, 6); }
+      }
     }
 
-    // 2. caminos
+    // 2. caminos: losas a juntas corridas, con bordillo arriba y sombra abajo
     for(var y2=0; y2<CH; y2++) for(var x2=0; x2<CH; x2++){
       var tx2=ox+x2, ty2=oy+y2;
       if(!isRoad(tx2,ty2)) continue;
       var px=x2*T, py=y2*T;
+      if(TX){
+        g.drawImage(TX.camino[hi(tx2*7,ty2*3,2)], px, py);
+        if(!isRoad(tx2,ty2-1)) rect(g,P.roadL,px,py,T,2);
+        if(!isRoad(tx2,ty2+1)) rect(g,P.roadD,px,py+T-3,T,3);
+        if(!isRoad(tx2-1,ty2)) rect(g,P.roadD,px,py,2,T);
+        if(!isRoad(tx2+1,ty2)) rect(g,P.roadD,px+T-2,py,2,T);
+        continue;
+      }
       rect(g,P.roadD,px,py,T,T);
       rect(g,P.road,px+1,py+1,T-2,T-2);
-      // losas
       var s=hi(tx2*7,ty2*3,4);
       rect(g,P.roadL,px+2,py+2,14,1);
       rect(g,P.roadD,px+2+s,py+15,T-6,2);
@@ -305,9 +336,11 @@
     if(type === "plaza"){
       // una plaza empedrada con su pozo y cuatro luces: sirve de referencia
       var qx = bx*CH, qy = by*CH;
+      var TXP = V.tex ? V.tex.juego(stageKey, P) : null;
       for(var qi=1; qi<7; qi++) for(var qj=1; qj<7; qj++){
         if(isRoad(qx+qi, qy+qj)) continue;
         var ppx=(qx+qi-ox)*T, ppy=(qy+qj-oy)*T;
+        if(TXP){ g.drawImage(TXP.plaza, ppx, ppy); continue; }
         rect(g, P.roadD, ppx, ppy, T, T);
         rect(g, P.road, ppx+1, ppy+1, T-2, T-2);
         rect(g, P.roadL, ppx+2, ppy+2, 12, 1);
@@ -355,8 +388,8 @@
       }
       for(i=1;i<w-1;i++) for(j=1;j<h;j++){
         var n=h2(tx+i*3,ty+j*7);
-        if(n>.72 && free(tx+i,ty+j)) bush(g,P,px(tx+i),py(ty+j));
-        else if(n<.14 && free(tx+i,ty+j)) rock(g,P,px(tx+i),py(ty+j),1);
+        if(n>.80 && free(tx+i,ty+j)) bush(g,P,px(tx+i),py(ty+j));
+        else if(n<.10 && free(tx+i,ty+j)) rock(g,P,px(tx+i),py(ty+j),1);
       }
     }
     else if(type === "arboleda"){
@@ -395,12 +428,15 @@
         tx=baseX+i; ty=baseY+j;
         if(!free(tx,ty)) continue;
         var n4=h2(tx*17+8, ty*7+11);
-        if(stageKey==="catedral" && n4>.86) column(g,P,px(tx),py(ty));
-        else if(stageKey==="bosque" && n4>.88) hanged(g,P,px(tx),py(ty));
-        else if(n4>.90) ruin(g,P,px(tx),py(ty));
-        else if(n4>.78) rock(g,P,px(tx),py(ty));
-        else if(n4>.70) deadTree(g,P,px(tx),py(ty));
-        else if(n4<.05) well(g,P,px(tx),py(ty));
+        /* El arco dibujado mide casi dos baldosas: con la densidad de antes
+           salía un bosque de arcos pisándose. Va uno cada tres baldosas y
+           con umbral alto, para que se lea como una ruina y no como muro. */
+        if(stageKey==="catedral" && n4>.92) column(g,P,px(tx),py(ty));
+        else if(stageKey==="bosque" && n4>.92) hanged(g,P,px(tx),py(ty));
+        else if(n4>.965 && i%3===1 && j%3===1) ruin(g,P,px(tx),py(ty));
+        else if(n4>.88) rock(g,P,px(tx),py(ty));
+        else if(n4>.74) deadTree(g,P,px(tx),py(ty));
+        else if(n4<.03) well(g,P,px(tx),py(ty));
       }
     }
   }

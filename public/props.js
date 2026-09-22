@@ -357,6 +357,9 @@
     // variante de flor en el segundo color
     var fk = "p_"+stageKey+"_flor2";
     if(!V.px.bank[fk]) V.px.def(fk, {f:P.fl2, l:P.tuftD}, G.flor, {anim:false});
+    /* Las piezas dibujadas van al final: pisan a la versión de texto del
+       mismo nombre (matorral, farola, roca) y añaden muro y arco. */
+    if(V.buildProps64) V.buildProps64(stageKey, P);
   };
   V.PROP_GRIDS = G;
 })();
