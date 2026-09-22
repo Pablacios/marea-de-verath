@@ -148,18 +148,26 @@
     if(!ic) return;
     var pad = Math.max(2, Math.round(S*0.12));
     var box = S - pad*2;
+    /* La escala se redondea a entero cuando cabe: a 2,1x unas filas del
+       dibujo salen de dos píxeles y otras de tres, y el pixel art se ve
+       sucio. A 2x exactos, cada píxel mide lo mismo. */
     var k = Math.min(box/ic.width, box/ic.height);
+    if(k >= 1) k = Math.floor(k);
     var dw = Math.max(1, Math.round(ic.width*k)), dh = Math.max(1, Math.round(ic.height*k));
     ctx.drawImage(ic, Math.round(x+(S-dw)/2), Math.round(y+(S-dh)/2), dw, dh);
   }
+  /* El número de nivel se mide contra el hueco, no contra una constante: si
+     el hueco crece, la cifra crece con él y no se queda de adorno. */
   function slotLevel(ctx, txt, x, y, S, dpr, color){
-    ctx.font = "700 " + Math.round(10.5*dpr) + "px 'Barlow Semi Condensed',Arial,sans-serif";
+    var fs = Math.max(9, Math.round(S*0.30));
+    var bh = Math.round(fs*1.05), pad = Math.round(fs*0.32);
+    ctx.font = "700 " + fs + "px 'Barlow Semi Condensed',Arial,sans-serif";
     ctx.textAlign = "right";
     var tw = ctx.measureText(txt).width;
     ctx.fillStyle = "rgba(7,6,14,.9)";
-    ctx.fillRect(x+S-tw-5, y+S-Math.round(11*dpr), tw+5, Math.round(11*dpr));
+    ctx.fillRect(x+S-tw-pad-2, y+S-bh, tw+pad+2, bh);
     ctx.fillStyle = color || "#E5B95C";
-    ctx.fillText(txt, x+S-2, y+S-Math.round(2.6*dpr));
+    ctx.fillText(txt, x+S-3, y+S-Math.round(bh*0.22));
   }
 
   U.drawHud = function(ctx, w, h, info){
@@ -190,7 +198,8 @@
     ctx.fillText(G.kills()+" bajas", w-10*dpr, bh+34*dpr);
 
     // inventario: seis huecos de armas arriba, seis de pasivos debajo
-    var S = Math.round(28*dpr), gap = Math.round(3*dpr);
+    // huecos al doble de lo que medían: a 28 no se distinguía qué llevabas
+    var S = Math.round(56*dpr), gap = Math.round(4*dpr);
     var x0 = Math.round(8*dpr), y0 = bh + Math.round(26*dpr);
     var r, c, x, y;
     for(r=0;r<2;r++) for(c=0;c<6;c++){
@@ -1097,7 +1106,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v28";
+  var BUILD = "v29";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;

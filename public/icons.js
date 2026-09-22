@@ -53,6 +53,7 @@
     return c;
   }
 
+  V.iconKeys = function(){ return Object.keys(ICON); };
   V.iconCanvas = function(key, evo){
     var e = ICON[key];
     if(!e) return null;
@@ -84,601 +85,887 @@
     return '<img class="' + (cls||"icn") + '" alt="" src="' + cv.toDataURL() + '">';
   };
 
-  /* ================= ARMAS ================= */
+  /* ================= ARMAS =================
+     Todos los iconos se dibujan sobre una rejilla cuadrada de unos 18
+     píxeles de lado, para que llenen el hueco del HUD en vez de flotar
+     dentro. Y todos comparten la misma paleta de materiales —hierro, acero,
+     oro, madera, hueso, sangre— para que se vean como un juego de piezas y
+     no como veinte dibujos sueltos. */
 
-  ico("latigo", {c:"#C2263A", h:"#6B4A2F"}, [
-    "..............c",
-    "...........ccc.",
-    ".........cc....",
-    ".......cc......",
-    ".....cc........",
-    "...cc..........",
-    "..cc...........",
-    ".cc............",
-    "hhh............",
-    "hhh............",
-    "hh............."
+  ico("latigo", {r:"#C2263A", d:"#7A1220", w:"#6B4A2F", n:"#40291A"}, [
+    "..................",
+    "..............rr..",
+    ".............r..r.",
+    ".............r..r.",
+    "..........rrrr..r.",
+    ".......rrrr....rr.",
+    ".....rrr..........",
+    "...rrr............",
+    "..rr..............",
+    ".rr...............",
+    "wwr...............",
+    "www...............",
+    "wwww..............",
+    "nnww..............",
+    "nnn...............",
+    ".................."
   ]);
 
-  ico("varita", {w:"#8A6A46", g:"#8FA8FF", s:"#FFF4D6"}, [
-    ".....g.........",
-    "....ggg........",
-    "...gg.gg.......",
-    "...gg.gg.......",
-    "....ggg........",
-    ".....gw........",
-    "......ww.......",
-    ".......ww......",
-    "........ww.....",
-    ".........ww....",
-    "..........ww..."
+  ico("varita", {w:"#6B4A2F", n:"#40291A", a:"#8FA8FF", l:"#DCE8FF"}, [
+    "..................",
+    ".......aa.........",
+    "......alla........",
+    ".....a.ll.a.......",
+    "...aaalllaaa......",
+    "....a.lll.a.......",
+    ".....allla........",
+    "......a.a.........",
+    ".......aw.........",
+    "........ww........",
+    ".........ww.......",
+    "..........ww......",
+    "...........nw.....",
+    "............nn....",
+    ".............n....",
+    ".................."
   ]);
 
-  ico("daga", {b:"#C9CEDC", g:"#6B4A2F", p:"#E5B95C"}, [
-    "......b........",
-    ".....bbb.......",
-    ".....bbb.......",
-    ".....bbb.......",
-    ".....bbb.......",
-    ".....bbb.......",
-    "...ppppppp.....",
-    "......g........",
-    "......g........",
-    "......g........",
-    ".....ppp......."
+  ico("daga", {s:"#9AA0B0", l:"#D6DCE8", g:"#C99A3E", n:"#40291A"}, [
+    "........ll........",
+    "........sl........",
+    ".......ssll.......",
+    ".......ssll.......",
+    ".......ssll.......",
+    ".......ssll.......",
+    ".......ssll.......",
+    "......gggggg......",
+    "......gggggg......",
+    "........nn........",
+    "........nn........",
+    "........nn........",
+    "........nn........",
+    ".......gggg.......",
+    ".......gggg.......",
+    ".................."
   ]);
 
-  ico("hacha", {b:"#9AA0B0", h:"#6B4A2F"}, [
-    ".bbbb..h...",
-    "bbbbbb.h...",
-    "bbbbbbbh...",
-    "bbbbbbbh...",
-    "bbbbbb.h...",
-    ".bbbb..h...",
-    ".......h...",
-    ".......h...",
-    ".......h...",
-    ".......h..."
+  ico("hacha", {s:"#9AA0B0", l:"#D6DCE8", w:"#6B4A2F", n:"#40291A"}, [
+    "..................",
+    "..ssss......ssss..",
+    ".slllls....sllllls",
+    "sllllllssslllllll.",
+    "slllllllwwllllllls",
+    "slllllllwwllllllls",
+    ".sllllllwwlllllls.",
+    "..slllllwwllllls..",
+    "...ssssswwsssss...",
+    "........www.......",
+    "........www.......",
+    "........www.......",
+    "........nnn.......",
+    "........nnn.......",
+    ".................."
   ]);
 
-  ico("cruz", {g:"#E5C34A"}, [
-    ".....gg........",
-    ".....gg........",
-    "..gggggggg.....",
-    "..gggggggg.....",
-    ".....gg........",
-    ".....gg........",
-    ".....gg........",
-    ".....gg........",
-    ".....gg........"
+  ico("cruz", {g:"#C99A3E", y:"#FFE066", r:"#C2263A"}, [
+    "..................",
+    ".......gyyg.......",
+    ".......gyyg.......",
+    ".......gyyg.......",
+    "...gggggyygggg....",
+    "...gyyyyrryyyyg...",
+    "...gyyyyrryyyyg...",
+    "...gggggyygggg....",
+    ".......gyyg.......",
+    ".......gyyg.......",
+    ".......gyyg.......",
+    ".......gyyg.......",
+    ".......gggg.......",
+    "..................",
+    ".................."
   ]);
 
-  ico("biblia", {c:"#C08BEF", p:"#F2EDE0", g:"#E5B95C"}, [
-    "..ccccccccccc..",
-    "..cpppppppppc..",
-    "..cppppgpppppc",
-    "..cppppgpppppc",
-    "..cppgggggppc.",
-    "..cpppppppppc..",
-    "..ccccccccccc..",
-    "..ccccccccccc.."
+  ico("biblia", {p:"#8E5FBF", m:"#C08BEF", c:"#F2EDE0", g:"#C99A3E"}, [
+    "..................",
+    "..mmmmmmmmmmmmmm..",
+    "..mpppppppppppppm.",
+    "..mpccccccccccppm.",
+    "..mpccccgccccccpm.",
+    "..mpccccgccccccpm.",
+    "..mpccgggggcccpm..",
+    "..mpccccgccccccpm.",
+    "..mpccccgccccccpm.",
+    "..mpccccccccccppm.",
+    "..mpppppppppppppm.",
+    "..mmmmmmmmmmmmmm..",
+    "...pppppppppppp...",
+    "..................",
+    ".................."
   ]);
 
-  ico("varafuego", {o:"#FF8A3C", y:"#FFE066", r:"#C2263A"}, [
-    "......o........",
-    ".....ooo.......",
-    "....ooyoo......",
-    "...ooyyyoo.....",
-    "...oyyyyyo.....",
-    "...ryyyyyr.....",
-    "....ryyyr......",
-    ".....rrr......."
+  ico("varafuego", {o:"#FF8A3C", f:"#FFD36B", r:"#C2263A", w:"#6B4A2F", n:"#40291A"}, [
+    ".......oo.........",
+    "......ofoo........",
+    ".....offfoo.......",
+    "....offfffo.......",
+    "....offfffo.......",
+    "....rofffor.......",
+    ".....roffr........",
+    "......rwwr........",
+    ".......ww.........",
+    "........ww........",
+    ".........ww.......",
+    "..........nw......",
+    "...........nn.....",
+    "............n.....",
+    ".................."
   ]);
 
-  ico("ajo", {w:"#F0E8D8", s:"#C8BBA6", g:"#5FBF6A"}, [
-    "......g........",
-    ".....g.........",
-    "....wwwww......",
-    "...wwsswww.....",
-    "..wwwsswwww....",
-    "..wwwsswwww....",
-    "...wwwwwww.....",
-    "....wwwww......"
+  ico("ajo", {b:"#E8DFC8", c:"#F2EDE0", s:"#8A7A62", v:"#5FBF6A"}, [
+    "........v.........",
+    ".......vv.........",
+    "......vv..........",
+    ".....cbbbc........",
+    "...ccbbbbbcc......",
+    "..cbbbsbsbbbc.....",
+    ".cbbbsbbbsbbbc....",
+    ".cbbsbbbbbsbbc....",
+    ".cbbsbbbbbsbbc....",
+    ".bbbsbbbbbsbbb....",
+    "..bbsbbbbbsbb.....",
+    "...bbbbbbbbb......",
+    ".....bbbbb........",
+    ".................."
   ]);
 
-  ico("agua", {g:"#C9CEDC", b:"#7CC6FF", c:"#6B4A2F"}, [
-    ".....cc........",
-    ".....cc........",
-    "....gggg.......",
-    "...gbbbbg......",
-    "..gbbbbbbg.....",
-    "..gbbbbbbg.....",
-    "..gbbbbbbg.....",
-    "...gbbbbg......",
-    "....gggg......."
+  ico("agua", {a:"#7CC6FF", e:"#2E5B8A", c:"#F2EDE0", g:"#C99A3E"}, [
+    "........gg........",
+    "........gg........",
+    ".......cccc.......",
+    ".......c..c.......",
+    "......cc..cc......",
+    ".....cc....cc.....",
+    "....cc......cc....",
+    "....ca......ac....",
+    "....caaaaaaaac....",
+    "....caaaaaaaac....",
+    "....ceaaaaaaec....",
+    "....ceeaaaaeec....",
+    ".....ceeeeeec.....",
+    "......cccccc......",
+    ".................."
   ]);
 
-  ico("trazarunas", {t:"#46E0C8", s:"#FFF4D6"}, [
-    "......t........",
-    ".....ttt.......",
-    "....ttstt......",
-    "...ttsssstt....",
-    "....ttstt......",
-    ".....ttt.......",
-    "......t........"
+  ico("trazarunas", {v:"#46E0C8", a:"#7CC6FF", l:"#DCE8FF"}, [
+    "........vv........",
+    ".......vaav.......",
+    "......vaaaav......",
+    ".....vaallaav.....",
+    "....vaal..laav....",
+    "...vaal....laav...",
+    "..vaal......laav..",
+    "...vaal....laav...",
+    "....vaal..laav....",
+    ".....vaallaav.....",
+    "......vaaaav......",
+    ".......vaav.......",
+    "........vv........",
+    ".................."
   ]);
 
-  ico("rayos", {y:"#FFE066"}, [
-    "......yy.......",
-    ".....yy........",
-    "....yy.........",
-    "...yyyyy.......",
-    ".....yy........",
-    "....yy.........",
-    "...yy.........."
+  ico("rayos", {y:"#FFE066", f:"#FFD36B", k:"#3E4252"}, [
+    "....kkkkkkkk......",
+    "..kk........kk....",
+    ".k.....yy.....k...",
+    ".k....yy......k...",
+    "k....yyy.......k..",
+    "k...yyyyyy.....k..",
+    "k......yy......k..",
+    "k.....yy.......k..",
+    ".k...yy.......k...",
+    ".k...y........k...",
+    "..kk........kk....",
+    "....kkkkkkkk......",
+    ".................."
   ]);
 
-  ico("pentagrama", {p:"#C08BEF"}, [
-    "....p....",
-    "....p....",
-    "ppppppppp",
-    ".ppppppp.",
-    "..ppppp..",
-    "..pp.pp..",
-    ".pp...pp."
+  ico("pentagrama", {m:"#C08BEF", p:"#8E5FBF", l:"#F0E0FF"}, [
+    "........ll........",
+    "........mm........",
+    ".......mmmm.......",
+    "pppppppmmmppppppp.",
+    ".pmmmmmmmmmmmmmp..",
+    "..pmmmmmmmmmmmp...",
+    "....pmmmmmmmp.....",
+    ".....pmmmmmp......",
+    ".....pmmmmmp......",
+    "....pmmmpmmmp.....",
+    "...pmmmp.pmmmp....",
+    "..pmmp.....pmmp...",
+    "..pp.........pp...",
+    ".................."
   ]);
 
-  ico("peachone", {w:"#E8EEFF", s:"#B8C2D8"}, [
-    "ww.......ww",
-    "wwww...wwww",
-    "wwwww.wwwww",
-    ".wwww.wwww.",
-    "..sww.wws..",
-    "...ss.ss...",
-    "....s.s...."
+  ico("peachone", {c:"#F2EDE0", b:"#E8DFC8", s:"#C8BBA6", g:"#C99A3E"}, [
+    "..................",
+    "...cc........cc...",
+    "..cccc......cccc..",
+    ".cccccc....cccccc.",
+    "bbbccccc..cccccbbb",
+    "bbbbcccc.ccccbbbb.",
+    ".sbbbccc.cccbbbs..",
+    "..ssbbcggcbbss....",
+    "...ssbbggbbss.....",
+    "....sssggsss......",
+    "......sggs........",
+    ".......gg.........",
+    ".................."
   ]);
 
-  ico("ebano", {w:"#4A4A60", s:"#2A2A38"}, [
-    "ww.......ww",
-    "wwww...wwww",
-    "wwwww.wwwww",
-    ".wwww.wwww.",
-    "..sww.wws..",
-    "...ss.ss...",
-    "....s.s...."
+  ico("ebano", {k:"#3E4252", t:"#2A2436", s:"#6A6E80", m:"#8E5FBF"}, [
+    "..................",
+    "...kk........kk...",
+    "..ssss......ssss..",
+    ".ssskkk....kkksss.",
+    "tttskkkk..kkkksttt",
+    "ttttkkkk.kkkktttt.",
+    ".tttkkkk.kkkkttt..",
+    "..tttkkmmkkttt....",
+    "...tttkmmkttt.....",
+    "....tttmmttt......",
+    "......tmmt........",
+    ".......mm.........",
+    ".................."
   ]);
 
-  ico("lanceta", {b:"#7CC6FF", w:"#E8EEFF"}, [
-    "...bbbbb.......",
-    "..b.....b......",
-    ".b...w...b.....",
-    ".b...ww..b.....",
-    ".b....ww.b.....",
-    "..b.....b......",
-    "...bbbbb......."
+  ico("lanceta", {a:"#7CC6FF", l:"#DCE8FF", k:"#3E4252"}, [
+    "..............ll..",
+    ".............laa..",
+    "............laa...",
+    "...........laa....",
+    "..........laa.....",
+    ".........laa......",
+    "........laa.......",
+    ".......laa........",
+    "......laa.........",
+    "....kkkk..........",
+    "...kkaakk.........",
+    "...kkaakk.........",
+    "....kkkk..........",
+    ".................."
   ]);
 
-  ico("laurel", {g:"#5FBF6A"}, [
-    "...gg.gg...",
-    "..g.....g..",
-    ".g.......g.",
-    "g.........g",
-    "g.........g",
-    ".g.......g.",
-    "..g.....g..",
-    "...gg.gg..."
+  ico("laurel", {v:"#5FBF6A", d:"#2F6E3A", g:"#C99A3E"}, [
+    ".......vvvv.......",
+    ".....vvddddvv.....",
+    "....vd......dv....",
+    "...vd........dv...",
+    "..vd..........dv..",
+    "..vd..........dv..",
+    "..vd..........dv..",
+    "..vd..........dv..",
+    "...vd........dv...",
+    "....vd......dv....",
+    ".....vvd..dvv.....",
+    "......gg..gg......",
+    ".................."
   ]);
 
-  ico("cancion", {p:"#C08BEF"}, [
-    "......ppppp....",
-    "......p...pp...",
-    "......p....p...",
-    "......p........",
-    "......p........",
-    "....ppp........",
-    "...ppppp.......",
-    "...ppppp.......",
-    "....ppp........"
+  ico("cancion", {m:"#C08BEF", p:"#8E5FBF", l:"#F0E0FF"}, [
+    "..........llmm....",
+    "..........mmmm....",
+    "..........mmpm....",
+    "..........mm.m....",
+    "..pp......mm.m....",
+    ".p..p.....mm.m....",
+    "p....p...mmm.m....",
+    ".p..p..mmmmm.m....",
+    "..pp..mmmmmmmm....",
+    "......mmmm..mm....",
+    ".....mmmm...mm....",
+    "......mm....mm....",
+    ".................."
   ]);
 
-  ico("gatos", {c:"#D8B070", e:"#2A2233"}, [
-    ".cc.......cc...",
-    ".ccc.....ccc...",
-    ".ccccccccccc...",
-    "ccccccccccccc..",
-    "cc.ee...ee.cc..",
-    "ccccccccccccc..",
-    "ccccceeeccccc..",
-    ".ccccccccccc...",
-    "..ccccccccc...."
+  ico("gatos", {w:"#D8B070", n:"#8A6030", y:"#FFE066", r:"#C2263A"}, [
+    "..ww..........ww..",
+    ".wwww........wwww.",
+    ".wnnw........wnnw.",
+    "wwwwwwwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwwwww",
+    "wwyywwwwwwwwyyww..",
+    "wwyywwwwwwwwyyww..",
+    "wwwwwwrrrrwwwwww..",
+    "wwwwwwrwwrwwwwww..",
+    ".wwwwwwwwwwwwww...",
+    "..nwwwwwwwwwwn....",
+    "....nnwwwwnn......",
+    ".................."
   ]);
 
-  ico("pistola", {m:"#C9CEDC", g:"#6B4A2F"}, [
-    "mmmmmmmmm..",
-    "mmmmmmmmm..",
-    "mm..mm.....",
-    "mmggg......",
-    "..gggg.....",
-    "..gggg.....",
-    "...ggg.....",
-    "...ggg....."
+  ico("pistola", {k:"#3E4252", s:"#9AA0B0", w:"#6B4A2F", n:"#40291A"}, [
+    "..................",
+    "......ssssssssss..",
+    ".....skkkkkkkkkks.",
+    ".....skkkkkkkkkks.",
+    ".....skkksssssssss",
+    "....sskkks........",
+    "...swwkkks........",
+    "...swwwkks........",
+    "...swwwws.........",
+    "....swwws.........",
+    "....swwws.........",
+    ".....swws.........",
+    ".....snns.........",
+    ".................."
   ]);
 
-  ico("escopeta", {m:"#FFD36B", g:"#6B4A2F"}, [
-    "mm.............",
-    "mmm............",
-    "mmmmmmmmm......",
-    "mmmmmmmmmgg....",
-    "mmm.......gg...",
-    "mm.........gg..",
-    "............gg."
+  ico("escopeta", {k:"#3E4252", s:"#9AA0B0", w:"#6B4A2F", n:"#40291A", y:"#FFE066"}, [
+    "..................",
+    ".........ssssssss.",
+    "........skkkkkkkk.",
+    ".......skkkkkkkky.",
+    "......skkkkkkkkkk.",
+    ".....skkkkkkkkkky.",
+    "....skkkks........",
+    "...wwwks..........",
+    "..wwww............",
+    ".nwww.............",
+    ".nww..............",
+    "nnn...............",
+    ".................."
+  ]);
+
+  ico("pluma", {l:"#DCE8FF", s:"#9AA0B0", k:"#3E4252"}, [
+    "..............ll..",
+    "............llls..",
+    "..........lllls...",
+    ".........lllls....",
+    "........llll.s....",
+    ".......llll.s.....",
+    "......llll.s......",
+    ".....llll.s.......",
+    "....llll.s........",
+    "...ssss.s.........",
+    "..sss..s..........",
+    ".kk...s...........",
+    ".k................",
+    ".................."
+  ]);
+
+  ico("viento", {c:"#F2EDE0", l:"#DCE8FF", a:"#7CC6FF"}, [
+    "..................",
+    "..................",
+    "...cccccccccc.....",
+    "...cc.......cc....",
+    "............cc....",
+    "..................",
+    "..................",
+    "..llllllllllll....",
+    "..ll.........ll...",
+    ".............ll...",
+    "..................",
+    "..................",
+    "....aaaaaaaa......",
+    "....aa......aa....",
+    "............aa....",
+    ".................."
+  ]);
+
+  ico("brazalete", {m:"#C08BEF", p:"#8E5FBF", g:"#C99A3E", l:"#F0E0FF"}, [
+    "......pppppp......",
+    "....ppggggggpp....",
+    "...pggg....gggp...",
+    "..pgg...ll...ggp..",
+    "..pg...lmml...gp..",
+    "..pg...lmml...gp..",
+    "..pgg...ll...ggp..",
+    "...pggg....gggp...",
+    "....ppggggggpp....",
+    "......pppppp......",
+    ".................."
+  ]);
+
+  ico("victoria", {y:"#FFE066", g:"#C99A3E", l:"#FFF4D6", c:"#F2EDE0"}, [
+    "........ll........",
+    "........ll........",
+    ".......llll.......",
+    ".......ylly.......",
+    ".......ylly.......",
+    ".......ylly.......",
+    ".......ylly.......",
+    "..cc...ylly...cc..",
+    ".cccggggllggggccc.",
+    "..cc.ggyyyygg.cc..",
+    ".......gyyg.......",
+    "........gg........",
+    "........gg........",
+    ".......gggg.......",
+    ".................."
   ]);
 
   /* ================= PASIVOS ================= */
 
-  ico("p_espinaca", {r:"#C2263A"}, [
-    "......r........",
-    ".....rrr.......",
-    "....rrrrr......",
-    "...rrrrrrr.....",
-    "...rrrrrrr.....",
-    "....rrrrr......",
-    ".....rrr......."
+  ico("p_espinaca", {r:"#C2263A", d:"#7A1220", k:"#3E4252", s:"#9AA0B0", l:"#FF6E7E"}, [
+    "........r.........",
+    ".......rrr........",
+    "......rrrrr.......",
+    ".....rlrrrrr......",
+    "....rlrrrrrrr.....",
+    "...rlrrrrrrrrr....",
+    "...kkkkkkkkkkk....",
+    "...sssssssssss....",
+    "...rrrrrrrrrrr....",
+    "....rrrrrrrrr.....",
+    ".....rrrrrrr......",
+    "......rrrrr.......",
+    ".......rrr........",
+    "........d........."
   ]);
 
-  ico("p_coraza", {s:"#8A8C9E", d:"#5A5C6E"}, [
-    "sssssssss",
-    "sddddddds",
-    "sddddddds",
-    "sddddddds",
-    ".sddddds.",
-    "..sddds..",
-    "...sds...",
-    "....s...."
+  ico("p_coraza", {s:"#9AA0B0", k:"#3E4252"}, [
+    "...ssssssssssss...",
+    "...ssssssssssss...",
+    "...sskksssskkss...",
+    "...ssssssssssss...",
+    "...ssssssssssss...",
+    "...sskksssskkss...",
+    "...ssssssssssss...",
+    "....ssssssssss....",
+    "....ssssssssss....",
+    ".....ssssssss.....",
+    "......ssssss......",
+    ".......ssss.......",
+    "........ss........",
+    ".................."
   ]);
 
-  ico("p_corazon", {r:"#B03040"}, [
-    "..rr...rr......",
-    ".rrrr.rrrr.....",
-    "rrrrrrrrrrr....",
-    "rrrrrrrrrrr....",
-    ".rrrrrrrrr.....",
-    "..rrrrrrr......",
-    "...rrrrr.......",
-    "....rrr........",
-    ".....r........."
+  ico("p_corazon", {r:"#C2263A", d:"#7A1220", l:"#FF6E7E", k:"#3E4252"}, [
+    "..rrrr....rrrr....",
+    ".rllrrr..rrrrrr...",
+    "rllrrrrrrrrrrrrr..",
+    "rlrrrrrrrrrrrrrr..",
+    "rrrrrrrrrrrrrrrr..",
+    "drrrrrrrrrrrrrrd..",
+    ".drrrrrrrrrrrrd...",
+    "..drrrrrrrrrrd....",
+    "...drrrrrrrrd.....",
+    "....drrrrrrd......",
+    ".....drrrrd.......",
+    "......drrd........",
+    ".......dd........."
   ]);
 
-  ico("p_pomarola", {g:"#5FBF6A", s:"#3E8C4A"}, [
-    "......gg.......",
-    "....gggggg.....",
-    "...gggsgggg....",
-    "..ggggsggggg...",
-    "...gggsgggg....",
-    "....ggsgg......",
-    "......s........",
-    "......s........"
+  ico("p_pomarola", {v:"#5FBF6A", d:"#2F6E3A", r:"#C2263A", n:"#40291A"}, [
+    "........n.........",
+    ".......nn.........",
+    "..vv..nn..vv......",
+    ".vddv.n..vddv.....",
+    ".vddvvnvvddv......",
+    "..vddvnvddv.......",
+    "...vdvnvdv........",
+    "....vvnvv.........",
+    "....rrnrr.........",
+    "...rrrrrrr........",
+    "...rrrrrrr........",
+    "....rrrrr.........",
+    ".................."
   ]);
 
-  ico("p_tomo", {b:"#8FA8FF", p:"#F2EDE0"}, [
-    "..bbbbbbbbb....",
-    "..bpppppppb....",
-    "..bpppppppb....",
-    "..bpppppppb....",
-    "..bpppppppb....",
-    "..bbbbbbbbb...."
+  ico("p_tomo", {a:"#7CC6FF", e:"#2E5B8A", c:"#F2EDE0", g:"#C99A3E"}, [
+    "..................",
+    "..eeeeee..eeeeee..",
+    ".eccccccaacccccce.",
+    ".eccccccaacccccce.",
+    ".eccccccaacccccce.",
+    ".eccccccaacccccce.",
+    ".eccccccaacccccce.",
+    ".eccccccaacccccce.",
+    ".eggccccaaccccgge.",
+    ".eeeeeeeaaeeeeeee.",
+    "..eeeeee..eeeeee..",
+    ".................."
   ]);
 
-  ico("p_candelabro", {y:"#E5C34A", f:"#FFD36B", w:"#F2EDE0"}, [
-    "..f...f...f....",
-    "..w...w...w....",
-    "..w...w...w....",
-    "..y...y...y....",
-    "..yyyyyyyyy....",
-    "......y........",
-    "....yyyyy......"
+  ico("p_candelabro", {g:"#C99A3E", y:"#FFE066", c:"#F2EDE0", o:"#FF8A3C"}, [
+    "..o.........o.....",
+    "..o....o....o.....",
+    ".ccc..ccc..ccc....",
+    ".ccc..ccc..ccc....",
+    ".ggg..ggg..ggg....",
+    "..g....g....g.....",
+    "..g....g....g.....",
+    "..ggggggggggg.....",
+    ".......g..........",
+    ".......g..........",
+    "....yyyyyyy.......",
+    "...ggggggggg......",
+    ".................."
   ]);
 
-  ico("p_brazal", {m:"#C9CEDC", d:"#8A8C9E"}, [
-    "..mmmmmmm..",
-    ".mdddddddm.",
-    "mddmdddmddm",
-    "mdddddddddm",
-    ".mdddddddm.",
-    "..mmmmmmm.."
+  ico("p_brazal", {s:"#9AA0B0", w:"#6B4A2F", k:"#3E4252"}, [
+    "..................",
+    "...ssssssssssss...",
+    "...swwsssssswws...",
+    "...swwsssssswws...",
+    "...swwsssssswws...",
+    "...swwsskksswws...",
+    "...swwsssssswws...",
+    "...swwsssssswws...",
+    "...swwsssssswws...",
+    "...ssssssssssss...",
+    ".................."
   ]);
 
-  ico("p_encantador", {p:"#C08BEF"}, [
-    "..ppp...ppp....",
-    ".p...p.p...p...",
-    ".p....p....p...",
-    ".p...p.p...p...",
-    "..ppp...ppp...."
+  ico("p_encantador", {m:"#C08BEF", p:"#8E5FBF", l:"#F0E0FF"}, [
+    "..................",
+    "...mmm.....mmm....",
+    "..mlllm...mlllm...",
+    ".mll.pmm.mmp.llm..",
+    ".ml...pmmmp...lm..",
+    ".ml....ppp....lm..",
+    ".ml...pmmmp...lm..",
+    ".mll.pmm.mmp.llm..",
+    "..mlllm...mlllm...",
+    "...mmm.....mmm....",
+    ".................."
   ]);
 
-  ico("p_duplicador", {y:"#FFE066"}, [
-    "..yy.....yy....",
-    ".yyyy...yyyy...",
-    ".yyyy...yyyy...",
-    "..yy.....yy....",
-    "...............",
-    "..yy.....yy....",
-    ".yyyy...yyyy...",
-    ".yyyy...yyyy...",
-    "..yy.....yy...."
+  ico("p_duplicador", {y:"#FFE066", g:"#C99A3E", l:"#FFF4D6"}, [
+    "..................",
+    "....ll......ll....",
+    "...lyyl....lyyl...",
+    "..lyyyyl..lyyyyl..",
+    ".lyyyyyyllyyyyyyl.",
+    ".gyyyyyyggyyyyyyg.",
+    "..gyyyyg..gyyyyg..",
+    "...gyyg....gyyg...",
+    "....gg......gg....",
+    ".................."
   ]);
 
-  ico("p_alas", {w:"#E8EEFF"}, [
-    "ww.......ww",
-    "wwww...wwww",
-    "wwwww.wwwww",
-    ".wwww.wwww.",
-    "..www.www..",
-    "...ww.ww...",
-    "....w.w...."
+  ico("p_alas", {c:"#F2EDE0", b:"#E8DFC8", s:"#C8BBA6"}, [
+    "..................",
+    "..cc..........cc..",
+    ".cccc........cccc.",
+    "cccccc......cccccc",
+    "bbcccc......ccccbb",
+    "bbbccc......cccbbb",
+    ".sbbcc......ccbbs.",
+    "..ssbb......bbss..",
+    "...sss......sss...",
+    "....ss......ss....",
+    ".................."
   ]);
 
-  ico("p_iman", {r:"#C2263A", m:"#46E0C8"}, [
-    "..rrrrrrr..",
-    ".rrrrrrrrr.",
-    ".rr.....rr.",
-    ".rr.....rr.",
-    ".rr.....rr.",
-    ".rr.....rr.",
-    ".mm.....mm."
+  ico("p_iman", {r:"#C2263A", d:"#7A1220", s:"#9AA0B0", l:"#D6DCE8"}, [
+    "....rrrrrrrr......",
+    "...rddddddddr.....",
+    "..rdd......ddr....",
+    "..rd........dr....",
+    "..rd........dr....",
+    "..rd........dr....",
+    "..rd........dr....",
+    "..sl........ls....",
+    "..sl........ls....",
+    "..ssl......lss....",
+    "...ss......ss.....",
+    ".................."
   ]);
 
-  ico("p_trebol", {g:"#7CC6FF"}, [
-    "..gg...gg..",
-    ".gggg.gggg.",
-    ".gggg.gggg.",
-    "..ggg.ggg..",
-    "....ggg....",
-    "..ggg.ggg..",
-    ".gggg.gggg.",
-    ".gggg.gggg.",
-    "..gg...gg..",
-    "....g......",
-    "....g......"
+  ico("p_trebol", {v:"#5FBF6A", d:"#2F6E3A", l:"#9BE8A6", n:"#40291A"}, [
+    "...vvv...vvv......",
+    "..vlllv.vlllv.....",
+    ".vlllllvlllllv....",
+    ".vlllllvlllllv....",
+    "..vlllvdvlllv.....",
+    "...vvvdddvvv......",
+    "..vvvdddddvvv.....",
+    ".vlllvdddvlllv....",
+    ".vlllllvlllllv....",
+    ".vlllllvlllllv....",
+    "..vlllv.vlllv.....",
+    "...vvv.n.vvv......",
+    ".......n..........",
+    "......nn.........."
   ]);
 
-  ico("p_corona", {g:"#E5B95C", j:"#C2263A"}, [
-    "g...g...g......",
-    "gg.ggg.gg......",
-    "ggggggggg......",
-    "ggjggjggg......",
-    "ggggggggg......",
-    "ggggggggg......"
+  ico("p_corona", {y:"#FFE066", g:"#C99A3E", r:"#C2263A", l:"#FFF4D6"}, [
+    "..l.....l.....l...",
+    "..y.....y.....y...",
+    ".yyy...yyy...yyy..",
+    ".yyy...yyy...yyy..",
+    ".yyyy.yyyyy.yyyy..",
+    ".yyyyyyyyyyyyyyy..",
+    ".yyyyyyyyyyyyyyy..",
+    ".ygyyyrryyrryyyg..",
+    ".ggggggggggggggg..",
+    ".ggggggggggggggg..",
+    ".................."
   ]);
 
-  ico("p_mascara", {s:"#9A7220", e:"#2A2233"}, [
-    ".sssssssss.....",
-    "sssssssssss....",
-    "ss.ee.ee.ss....",
-    "sssssssssss....",
-    "sss.sss.sss....",
-    ".sssssssss.....",
-    "..sssssss......",
-    "...sssss......."
+  ico("p_mascara", {s:"#9AA0B0", k:"#3E4252", l:"#D6DCE8"}, [
+    "..ssssssssssss....",
+    ".sllllllllllllls..",
+    ".slkkkllllkkkkls..",
+    ".slkkkllllkkkkls..",
+    ".sllllllllllllls..",
+    ".slllllkklllllls..",
+    ".slllllkklllllls..",
+    ".sllllllllllllls..",
+    ".slkkkkkkkkkkkls..",
+    ".sllllllllllllls..",
+    "..sllllllllllls...",
+    "...sssssssssss....",
+    ".................."
   ]);
 
-  ico("p_calavera", {b:"#A9B6D6", e:"#2A2233"}, [
-    "..bbbbbbb......",
-    ".bbbbbbbbb.....",
-    ".bb.ee.ee.b....",
-    ".bbbbbbbbb.....",
-    ".bbb.e.bbb.....",
-    "..bbbbbbb......",
-    "...b.b.b......."
+  ico("p_calavera", {b:"#E8DFC8", c:"#F2EDE0", k:"#2A2436", s:"#C8BBA6"}, [
+    "....cccccccc......",
+    "...cbbbbbbbbc.....",
+    "..cbbbbbbbbbbc....",
+    "..cbkkkbbkkkbc....",
+    "..cbkkkbbkkkbc....",
+    "..cbbbbbbbbbbc....",
+    "...cbbbkkbbbc.....",
+    "....cbbkkbbc......",
+    "....cbkbbkbc......",
+    "....ssssssss......",
+    ".....s.ss.s.......",
+    ".................."
   ]);
 
-  ico("p_reliquia", {y:"#FFD36B", w:"#FFF4D6"}, [
-    "...yyyyyyy.....",
-    "..yywwwwwyy....",
-    ".yyyywwwyyyy...",
-    "..yyyyyyyyy....",
-    "...yyyyyyy.....",
-    "....yyyyy......",
-    ".....yyy.......",
-    "......y........"
+  ico("p_reliquia", {y:"#FFE066", g:"#C99A3E", m:"#C08BEF", l:"#FFF4D6"}, [
+    "......ggggg.......",
+    ".....gyyyyyg......",
+    "....gyylllyyg.....",
+    "...gyyl.m.lyyg....",
+    "...gyl.mmm.lyg....",
+    "...gyl.mmm.lyg....",
+    "...gyyl.m.lyyg....",
+    "....gyylllyyg.....",
+    ".....gyyyyyg......",
+    "......ggggg.......",
+    ".....ggggggg......",
+    ".................."
+  ]);
+
+  ico("p_torrona", {g:"#C99A3E", y:"#FFE066", r:"#C2263A", n:"#40291A"}, [
+    "..................",
+    "...yyyyyyyyyy.....",
+    "..ygggggggggy.....",
+    "..yggrrrrrggy.....",
+    "..yggggggggyy.....",
+    "..yyyyyyyyyy......",
+    "..ygggggggggy.....",
+    "..yggggrggggy.....",
+    "..ygggrrrgggy.....",
+    "..yggggrggggy.....",
+    "..ynnnnnnnnny.....",
+    "...yyyyyyyyy......",
+    ".................."
+  ]);
+
+  ico("p_plata", {s:"#9AA0B0", l:"#D6DCE8", a:"#7CC6FF"}, [
+    "........aa........",
+    ".......llll.......",
+    "....llllllllll....",
+    "...ll........ll...",
+    "..ls..........sl..",
+    "..ls..........sl..",
+    "..ls..........sl..",
+    "..ls..........sl..",
+    "...ss........ss...",
+    "....ssssssssss....",
+    ".................."
+  ]);
+
+  ico("p_oro", {g:"#C99A3E", y:"#FFE066", r:"#C2263A"}, [
+    "........rr........",
+    ".......yyyy.......",
+    "....yyyyyyyyyy....",
+    "...yy........yy...",
+    "..yg..........gy..",
+    "..yg..........gy..",
+    "..yg..........gy..",
+    "..yg..........gy..",
+    "...gg........gg...",
+    "....gggggggggg....",
+    ".................."
+  ]);
+
+  ico("p_metaizq", {a:"#7CC6FF", e:"#2E5B8A", l:"#DCE8FF"}, [
+    "....aaaaaa........",
+    "...aallllaa.......",
+    "..aal....laa......",
+    "..al......la......",
+    "..al.......a......",
+    "..al..............",
+    "..al.......e......",
+    "..ae......ea......",
+    "..eae....eaa......",
+    "...eaaaaeaa.......",
+    "....eeeeee........",
+    ".................."
+  ]);
+
+  ico("p_metader", {r:"#C2263A", d:"#7A1220", l:"#FF9AA6"}, [
+    "........rrrrrr....",
+    ".......rrllllrr...",
+    "......rrl....lrr..",
+    "......rl......lr..",
+    "......r.......lr..",
+    "..............lr..",
+    "......d.......lr..",
+    "......rd......dr..",
+    "......rrd....drd..",
+    ".......rrddddrd...",
+    "........dddddd....",
+    ".................."
   ]);
 
   /* ================= OBJETOS DEL SUELO ================= */
 
-  ico("d_cura", {r:"#C2263A"}, [
-    "..rr...rr......",
-    ".rrrr.rrrr.....",
-    "rrrrrrrrrrr....",
-    "rrrrrrrrrrr....",
-    ".rrrrrrrrr.....",
-    "..rrrrrrr......",
-    "...rrrrr.......",
-    "....rrr........",
-    ".....r........."
+  ico("d_cura", {r:"#C2263A", l:"#FF6E7E", d:"#7A1220"}, [
+    "..rrrr....rrrr....",
+    ".rllrrr..rrrrrr...",
+    "rllrrrrrrrrrrrrr..",
+    "rrrrrrrrrrrrrrrr..",
+    "drrrrrrrrrrrrrrd..",
+    ".drrrrrrrrrrrrd...",
+    "..drrrrrrrrrrd....",
+    "...drrrrrrrrd.....",
+    "....drrrrrrd......",
+    ".....drrrrd.......",
+    "......drrd........",
+    ".......dd........."
   ]);
 
-  ico("d_oro", {g:"#8A6A46", y:"#E5B95C"}, [
-    "...gg.ggg......",
-    "..ggggggggg....",
-    ".ggyyyyyyyggg..",
-    ".gyyyyyyyyygg..",
-    ".gyyy.y.yyygg..",
-    ".ggyyyyyyyggg..",
-    "..ggggggggg....",
-    "...ggggggg....."
+  ico("d_oro", {y:"#FFE066", g:"#C99A3E", l:"#FFF4D6"}, [
+    "..................",
+    ".....llyyyll......",
+    "....lyyyyyyyl.....",
+    "....yyyggyyyy.....",
+    "....yyggggyyy.....",
+    "....ggggggggg.....",
+    "..llyyyllyyyyl....",
+    ".lyyyyyyyyyyyyl...",
+    ".yyggyyyggyyyyy...",
+    ".ggggggggggggg....",
+    "..ggggggggggg.....",
+    ".................."
   ]);
 
-  /* ========== PODERES DEL SUELO Y LUCES ========== */
-
-  ico("pu_luz", {h:"#3A3444", f:"#FFD36B", c:"#FF8A3C"}, [
-    "...ff...",
-    "..fcf...",
-    "..fff...",
-    "...h....",
-    "...h....",
-    "...h....",
-    "..hhh..."
+  ico("pu_luz", {o:"#FF8A3C", f:"#FFD36B", c:"#F2EDE0", s:"#C8BBA6", g:"#C99A3E"}, [
+    "........o.........",
+    ".......off........",
+    ".......offf.......",
+    "......offffo......",
+    "......oofffo......",
+    ".......ooffo......",
+    "........ooo.......",
+    "......cccccc......",
+    "......cccccc......",
+    "......cccccc......",
+    "......sccccs......",
+    ".....gggggggg.....",
+    "....gggggggggg....",
+    ".................."
   ]);
 
-  ico("pu_rosario", {b:"#E8EEFF", g:"#E5B95C"}, [
-    "..bb.bb..",
-    ".b.....b.",
-    "b.......b",
-    "b.......b",
-    ".b.....b.",
-    "..b.g.b..",
-    "....g....",
-    "..ggggg..",
-    "....g....",
-    "....g...."
+  ico("pu_rosario", {c:"#F2EDE0", b:"#E8DFC8", g:"#C99A3E", y:"#FFE066"}, [
+    "....ccc..ccc......",
+    "...c...cc...c.....",
+    "..c..........c....",
+    "..c..........c....",
+    "...c........c.....",
+    "....c......c......",
+    ".....c....c.......",
+    "......gyyg........",
+    "...gggyyyggg......",
+    "...gggyyyggg......",
+    "......gyyg........",
+    "......gyyg........",
+    "......gggg........",
+    ".................."
   ]);
 
-  ico("pu_llama", {o:"#FF8A3C", y:"#FFE066", r:"#C2263A"}, [
-    "....o....",
-    "...ooo...",
-    "..ooyoo..",
-    ".ooyyyoo.",
-    ".oyyyyyo.",
-    ".ryyyyyr.",
-    "..ryyyr..",
-    "...rrr..."
+  ico("pu_llama", {o:"#FF8A3C", f:"#FFD36B", r:"#C2263A", y:"#FFF4D6"}, [
+    "........r.........",
+    ".......ro.........",
+    "......roo.........",
+    ".....rooff........",
+    "....roofffo.......",
+    "....rofyyffo......",
+    "...rrofyyyffo.....",
+    "...rrofyyyffo.....",
+    "...rroofyyffo.....",
+    "....rroofffo......",
+    ".....rrooofo......",
+    "......rrrro.......",
+    ".................."
   ]);
 
-  ico("pu_reloj", {g:"#E5B95C", s:"#7CC6FF"}, [
-    "ggggggg",
-    ".sssss.",
-    "..sss..",
-    "...s...",
-    "..s.s..",
-    ".sssss.",
-    "ggggggg"
+  ico("pu_reloj", {a:"#7CC6FF", e:"#2E5B8A", g:"#C99A3E", l:"#DCE8FF"}, [
+    "..gggggggggg......",
+    "..gllllllllg......",
+    "...aaaaaaaa.......",
+    "....aaaaaa........",
+    ".....aaaa.........",
+    "......aa..........",
+    ".....eaae.........",
+    "....eeaaee........",
+    "...eeeaaeee.......",
+    "..eeeeaaeeee......",
+    "..gllllllllg......",
+    "..gggggggggg......",
+    ".................."
   ]);
 
-  ico("pu_vacio", {t:"#46E0C8", d:"#1E8C4A"}, [
-    "..ttttt..",
-    ".t.....t.",
-    "t..ddd..t",
-    "t.dd.dd.t",
-    "t..ddd..t",
-    ".t.....t.",
-    "..ttttt.."
+  ico("pu_vacio", {p:"#8E5FBF", m:"#C08BEF", k:"#2A2436", l:"#F0E0FF"}, [
+    ".....mmmmmm.......",
+    "...mmpppppmm......",
+    "..mppkkkkkppm.....",
+    "..mpkkkkkkkpm.....",
+    ".mpkkkkkkkkkpm....",
+    ".mpkkkklkkkkpm....",
+    ".mpkkkkkkkkkpm....",
+    "..mpkkkkkkkpm.....",
+    "..mppkkkkkppm.....",
+    "...mmpppppmm......",
+    ".....mmmmmm.......",
+    ".................."
   ]);
 
-  ico("pu_carne", {m:"#C2263A", h:"#F0E8D8"}, [
-    "..mmmmm..",
-    ".mmmmmmm.",
-    "mmmmmmmmm",
-    "mmmmmmmmm",
-    ".mmmmmmm.",
-    "...hhh...",
-    "..h...h.."
+  ico("pu_carne", {w:"#C08050", n:"#7A4A28", b:"#E8DFC8", c:"#F2EDE0"}, [
+    "..................",
+    "....wwwww.........",
+    "...wwwwwww........",
+    "..wwwwwwwww.......",
+    "..wwwnnwwww.......",
+    "..wwwwwwwww.......",
+    "...wwwwwww........",
+    "....wwwwbb........",
+    ".......bbbb.......",
+    "........bbbb......",
+    ".........bbcc.....",
+    "..........ccc.....",
+    ".................."
   ]);
 
-  ico("arcana", {c:"#6A4A8E", b:"#C08BEF", s:"#FFF4D6"}, [
-    "ccccccccc",
-    "cbbbbbbbc",
-    "cb..s..bc",
-    "cb.sss.bc",
-    "cbs.s.sbc",
-    "cb.sss.bc",
-    "cb..s..bc",
-    "cbbbbbbbc",
-    "ccccccccc"
-  ]);
-
-  /* ========== ARMAS Y PASIVOS AÑADIDOS ========== */
-
-  ico("pluma", {w:"#E8EEFF", s:"#B8C2D8"}, [
-    ".......ww",
-    "......www",
-    ".....wwww",
-    "....wwsww",
-    "...wwswww",
-    "..wwswww.",
-    ".wwswww..",
-    "wwsww....",
-    "ws.w.....",
-    "s........"
-  ]);
-
-  ico("viento", {a:"#DCE8FF", b:"#8FA8FF"}, [
-    "...aaaaaaaa..",
-    "aaaa......aa.",
-    "...........aa",
-    "..bbbbbbbbbb.",
-    "bbb.......bb.",
-    "...aaaaaaaa..",
-    "aaa.....aa..."
-  ]);
-
-  ico("brazalete", {p:"#C08BEF", s:"#FFF4D6"}, [
-    "..ppppp..",
-    ".pp...pp.",
-    "pp..s..pp",
-    "p..sss..p",
-    "pp..s..pp",
-    ".pp...pp.",
-    "..ppppp.."
-  ]);
-
-  ico("victoria", {b:"#FFF3D0", g:"#E5B95C", h:"#6B4A2F"}, [
-    "......b..",
-    ".....bbb.",
-    ".....bbb.",
-    ".....bbb.",
-    ".....bbb.",
-    "...ggggg.",
-    ".....h...",
-    ".....h...",
-    "....ggg.."
-  ]);
-
-  ico("p_torrona", {c:"#C08BEF", g:"#E5B95C", s:"#FFF4D6"}, [
-    ".ccccccccc.",
-    "cgggggggggc",
-    "cg..sss..gc",
-    "cg.sssss.gc",
-    "cg..sss..gc",
-    "cgggggggggc",
-    ".ccccccccc."
-  ]);
-
-  ico("p_plata", {m:"#C9CEDC", s:"#FFF4D6"}, [
-    "...sss...",
-    "..mm.mm..",
-    ".mm...mm.",
-    ".mm...mm.",
-    ".mm...mm.",
-    "..mm.mm..",
-    "...mmm..."
-  ]);
-
-  ico("p_oro", {m:"#E5B95C", s:"#FFF4D6"}, [
-    "...sss...",
-    "..mm.mm..",
-    ".mm...mm.",
-    ".mm...mm.",
-    ".mm...mm.",
-    "..mm.mm..",
-    "...mmm..."
-  ]);
-
-  ico("p_metaizq", {b:"#8FA8FF", s:"#FFF4D6"}, [
-    "bbbbb....",
-    "bbsbbb...",
-    "bb.sbbb..",
-    "bb..sbbb.",
-    "bb...sbbb",
-    "bbbbbbbbb"
-  ]);
-
-  ico("p_metader", {r:"#C2263A", s:"#FFF4D6"}, [
-    "....rrrrr",
-    "...rrrsrr",
-    "..rrrs.rr",
-    ".rrrs..rr",
-    "rrrs...rr",
-    "rrrrrrrrr"
+  ico("arcana", {p:"#8E5FBF", m:"#C08BEF", c:"#F2EDE0", y:"#FFE066"}, [
+    "..pppppppppppp....",
+    "..pmmmmmmmmmmp....",
+    "..pmccccccccmp....",
+    "..pmcccyccccmp....",
+    "..pmccyyycccmp....",
+    "..pmcyyyyyccmp....",
+    "..pmccyyycccmp....",
+    "..pmcccyccccmp....",
+    "..pmccccccccmp....",
+    "..pmmmmmmmmmmp....",
+    "..pppppppppppp....",
+    ".................."
   ]);
 
   V.ICONS = ICON;
