@@ -25,6 +25,40 @@
     }
     return out;
   }
+  /* ---------------- iconos pintados ----------------
+     Los dibujó el jugador, uno por arma y por pasivo. Aquí solo se cargan.
+     Las rejillas de píxeles de más abajo se quedan como red: hasta que
+     llegan los archivos —o si algún día falta uno— se dibuja la de píxeles
+     y el juego nunca arranca sin iconos. Los objetos del suelo (oro, carne,
+     antorchas, arcanas) siguen siendo de píxeles: no tienen dibujo. */
+  var PINTADOS = ("latigo varita daga hacha cruz biblia varafuego ajo agua " +
+    "trazarunas rayos pentagrama peachone ebano lanceta laurel cancion gatos " +
+    "pistola escopeta pluma viento brazalete victoria " +
+    "p_espinaca p_coraza p_corazon p_pomarola p_tomo p_candelabro p_brazal " +
+    "p_encantador p_duplicador p_alas p_iman p_trebol p_corona p_mascara " +
+    "p_calavera p_reliquia p_torrona p_plata p_oro p_metaizq p_metader " +
+    // y las 23 evoluciones, cada una con su dibujo
+    "sangre varitasagrada milfilos espiral espadacelestial visperas infierno " +
+    "devoraalmas laborra sinfuturo bucle lunaesplendida vandalier corredor " +
+    "sudario mannajja hambre iragemela valquiria fuwala bibrazalete " +
+    "tribrazalete solar").split(" ");
+  var ES_PINTADO = {}, IMG = {};
+  (function(){
+    for(var i=0;i<PINTADOS.length;i++){
+      ES_PINTADO[PINTADOS[i]] = 1;
+      (function(k){
+        var img = new Image();
+        img.decoding = "async";
+        img.onload = function(){ IMG[k] = img; };
+        img.src = "arte/ico_" + k + ".webp";
+      })(PINTADOS[i]);
+    }
+  })();
+  /* Los pintados se dibujan con suavizado y los de píxeles sin él: quien los
+     pinta necesita saber cuál tiene delante. */
+  V.esPintado = function(key){ return !!ES_PINTADO[key]; };
+  V.iconesPintados = function(){ return PINTADOS.slice(); };
+
   function ico(key, pal, rows){
     // los iconos se pintan sin luz de canto: a este tamaño solo haría ruido
     ICON[key] = {cv: V.px.paint(pal, grid(rows), {anim:false, rim:false}), url:null, evo:null};
@@ -34,36 +68,68 @@
      y con una chispa en la esquina. Así una evolución se reconoce de un
      vistazo sin necesitar un dibujo nuevo por arma. */
   function goldOf(cv){
+    /* La chispa y el desplazamiento se miden contra el icono: uno pintado de
+       128 px y una rejilla de 18 llevan la misma marca a distinta escala. */
+    var u = Math.max(1, Math.round(cv.width / 18));
     var c = document.createElement("canvas");
-    c.width = cv.width + 3; c.height = cv.height + 3;
+    c.width = cv.width + 3*u; c.height = cv.height + 3*u;
     var g = c.getContext("2d");
-    g.drawImage(cv, 0, 3);
+    g.imageSmoothingEnabled = cv.width > 40;
+    g.drawImage(cv, 0, 3*u, cv.width, cv.height);
     g.globalCompositeOperation = "source-atop";
-    g.globalAlpha = .5;
+    g.globalAlpha = cv.width > 40 ? .34 : .5;   // el pintado se apaga si se baña entero
     g.fillStyle = "#FFD36B";
     g.fillRect(0, 0, c.width, c.height);
     g.globalCompositeOperation = "source-over";
     g.globalAlpha = 1;
     // chispa de cuatro puntas arriba a la derecha
-    var sx = c.width - 5, sy = 0;
+    var sx = c.width - 5*u, sy = 0;
     g.fillStyle = "#1B0E28";
-    g.fillRect(sx+1, sy, 3, 5); g.fillRect(sx, sy+1, 5, 3);
+    g.fillRect(sx+u, sy, 3*u, 5*u); g.fillRect(sx, sy+u, 5*u, 3*u);
     g.fillStyle = "#FFF4D6";
-    g.fillRect(sx+2, sy+1, 1, 3); g.fillRect(sx+1, sy+2, 3, 1);
+    g.fillRect(sx+2*u, sy+u, u, 3*u); g.fillRect(sx+u, sy+2*u, 3*u, u);
     return c;
   }
 
   V.iconKeys = function(){ return Object.keys(ICON); };
+
+  /* Red de seguridad. Una evolución no tiene rejilla de píxeles propia: si su
+     dibujo no llegara, en vez de dejar el hueco vacío se usa el del arma de
+     la que salió. Se resuelve tarde, la primera vez que hace falta, porque
+     este archivo se carga antes que weapons.js. */
+  var DEQUIEN = null;
+  function base(key){
+    if(DEQUIEN === null){
+      DEQUIEN = {};
+      var R = V.EVO_RULES || [];
+      for(var i=0;i<R.length;i++) if(R[i].to) DEQUIEN[R[i].to] = R[i].from;
+    }
+    var de = DEQUIEN[key];
+    if(!de) return null;
+    if(IMG[de]) return de;
+    return ICON[de] ? de : base(de);      // Tri -> Bi -> Brazalete
+  }
   V.iconCanvas = function(key, evo){
+    /* Cada arma, pasivo y evolución tiene su dibujo: ya no se inventa la
+       versión evolucionada bañando en oro la del arma base. */
+    if(IMG[key]) return IMG[key];
     var e = ICON[key];
-    if(!e) return null;
+    if(!e){
+      var b = base(key);
+      return b ? V.iconCanvas(b, false) : null;
+    }
     if(!evo) return e.cv;
     if(!e.evo) e.evo = goldOf(e.cv);
     return e.evo;
   };
   V.iconURL = function(key, evo){
+    // el pintado se sirve como archivo: no hace falta cocinar un data-url
+    if(ES_PINTADO[key]) return "arte/ico_" + key + ".webp";
     var e = ICON[key];
-    if(!e) return "";
+    if(!e){
+      var b = base(key);
+      return b ? V.iconURL(b, false) : "";
+    }
     if(evo){
       if(!e.evoUrl) e.evoUrl = V.iconCanvas(key, true).toDataURL();
       return e.evoUrl;
@@ -74,6 +140,8 @@
   /* html listo para meter en una plantilla; si el icono no existe devuelve
      una caja vacía en vez de romper la tarjeta */
   V.iconHtml = function(key, cls, evo){
+    // los pintados se escalan suave; las rejillas de píxeles, a cuadraditos
+    if(ES_PINTADO[key] || (!ICON[key] && base(key))) cls = (cls || "icn") + " suave";
     var u = V.iconURL(key, evo);
     if(!u) return '<span class="' + (cls||"icn") + '"></span>';
     return '<img class="' + (cls||"icn") + '" alt="" src="' + u + '">';

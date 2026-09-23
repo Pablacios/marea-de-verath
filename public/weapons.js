@@ -657,5 +657,8 @@
   for(var ek in E){
     var d = E[ek];
     if(!d.spr && W[d.from]) d.spr = W[d.from].spr;
+    /* Icono propio: cada evolución tiene su dibujo. Antes heredaba el del
+       arma base y se distinguía bañándolo en oro, que era un apaño. */
+    d.ico = ek;
   }
 })();

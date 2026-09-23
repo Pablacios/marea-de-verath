@@ -205,15 +205,19 @@
   function slotIcon(ctx, key, evo, x, y, S){
     var ic = V.iconCanvas ? V.iconCanvas(key, evo) : null;
     if(!ic) return;
-    var pad = Math.max(2, Math.round(S*0.12));
+    var pintado = V.esPintado && V.esPintado(key);
+    // el dibujo llena más el hueco; la rejilla de píxeles pide más aire
+    var pad = Math.max(2, Math.round(S*(pintado ? 0.06 : 0.12)));
     var box = S - pad*2;
-    /* La escala se redondea a entero cuando cabe: a 2,1x unas filas del
-       dibujo salen de dos píxeles y otras de tres, y el pixel art se ve
-       sucio. A 2x exactos, cada píxel mide lo mismo. */
     var k = Math.min(box/ic.width, box/ic.height);
-    if(k >= 1) k = Math.floor(k);
+    /* El de píxeles se escala a un múltiplo entero: a 2,1x unas filas salen
+       de dos píxeles y otras de tres, y se ve sucio. El pintado viene a 128
+       px y siempre se reduce, así que va suave y sin redondeos. */
+    if(!pintado && k >= 1) k = Math.floor(k);
     var dw = Math.max(1, Math.round(ic.width*k)), dh = Math.max(1, Math.round(ic.height*k));
+    if(pintado){ ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high"; }
     ctx.drawImage(ic, Math.round(x+(S-dw)/2), Math.round(y+(S-dh)/2), dw, dh);
+    ctx.imageSmoothingEnabled = false;
   }
   /* El número de nivel se mide contra el hueco, no contra una constante: si
      el hueco crece, la cifra crece con él y no se queda de adorno. */
@@ -1234,7 +1238,7 @@
   /* ================= sala en línea ================= */
   var inRoom = false;
 
-  var BUILD = "v30";
+  var BUILD = "v31";
   function renderRoom(){
     var box = $("room"), st = $("roomState"), list = $("roomPeers");
     if(!box) return;
