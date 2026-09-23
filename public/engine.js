@@ -1321,6 +1321,24 @@
       var bu=bullets[b2];
       var bs = bu.spr ? V.sprite(bu.spr,0) : null;
       var ba = bu.spr ? sw(bu.spr) : 1;
+      /* Estela. Los proyectiles son sprites pequeños y a esta velocidad se
+         pierden: las balas quedaban en motas y el Ala de Ébano, que es
+         negra, desaparecía contra el suelo oscuro. La estela dice de dónde
+         viene y hacia dónde va, y le da un borde que lo despega del fondo. */
+      var vel = Math.hypot(bu.vx||0, bu.vy||0);
+      if(vel > 40){
+        var ux = bu.vx/vel, uy = bu.vy/vel;
+        var largo = Math.min(42, 8 + vel*0.055);
+        for(var e2=0;e2<6;e2++){
+          var ff = (e2+1)/6;
+          ctx.globalAlpha = 0.62*(1-ff*0.85);
+          ctx.fillStyle = "#FFF3D0";
+          var gr = Math.max(1, Math.round(bu.r*0.95*(1-ff*0.55)));
+          ctx.fillRect(Math.round(bu.x - ux*largo*ff - gr/2),
+                       Math.round(bu.y - uy*largo*ff - gr/2), gr, gr);
+        }
+        ctx.globalAlpha = 1;
+      }
       if(bs){
         ctx.save(); ctx.translate(Math.round(bu.x),Math.round(bu.y));
         if(bu.rot||bu.spin) ctx.rotate(bu.rotA);
@@ -1539,15 +1557,22 @@
       barrido(a.w, a.h, a.color, clamp(1-al, 0, 1));
       ctx.restore();
     } else if(a.kind === "pool"){
-      ctx.globalAlpha = Math.min(1, al*1.4);
+      /* Charco: una mancha ovalada tumbada en el suelo, no un cuadrado, con
+         motas girando por encima. Lo usan el Agua Bendita, las plumas del
+         Ala Fantasma y las llamas, así que los tres ganan a la vez. */
+      var r = a.r || 20;
+      ctx.globalAlpha = Math.min(1, al*0.45);
       ctx.fillStyle = a.color;
-      var r=a.r, st=10;
-      for(var q=0;q<st;q++){
-        var ang=(q/st)*6.283 + a.t;
-        ctx.fillRect(Math.round(a.x+Math.cos(ang)*r*.8)-3, Math.round(a.y+Math.sin(ang)*r*.8)-3, 6, 6);
+      ctx.beginPath();
+      ctx.ellipse(Math.round(a.x), Math.round(a.y), r*0.95, r*0.62, 0, 0, 6.283);
+      ctx.fill();
+      ctx.globalAlpha = Math.min(1, al*1.15);
+      for(var q=0;q<12;q++){
+        var ang = (q/12)*6.283 + a.t*1.7;
+        var rr3 = r*(0.34 + 0.60*(((q*7)%5)/5));
+        ctx.fillRect(Math.round(a.x+Math.cos(ang)*rr3)-2,
+                     Math.round(a.y+Math.sin(ang)*rr3*0.66)-2, 4, 4);
       }
-      ctx.globalAlpha = .18*al;
-      ctx.fillRect(a.x-r, a.y-r*.7, r*2, r*1.4);
       ctx.globalAlpha=1;
     } else if(a.kind === "bolt"){
       ctx.globalAlpha=al;
@@ -1563,18 +1588,47 @@
       ctx.fillRect(v2.x-v2.hw, v2.y-v2.hh, v2.hw*2, v2.hh*2);
       ctx.globalAlpha=1;
     } else if(a.kind === "lance"){
+      /* La Lanceta congela el tiempo, así que el haz se dibuja como hielo:
+         tres capas que se estrechan hacia dentro, esquirlas de escarcha a lo
+         largo y una punta blanca que sale disparada. Antes eran dos barras
+         planas y no se entendía qué hacía. */
       ctx.save(); ctx.translate(Math.round(a.x),Math.round(a.y)); ctx.rotate(a.ang);
-      ctx.globalAlpha=al;
-      ctx.fillStyle=a.color;
-      ctx.fillRect(0, -a.h/2, a.w, a.h);
-      ctx.fillStyle="#FFFFFF";
-      ctx.fillRect(0, -3, a.w, 6);
+      var L4 = a.w, H4 = a.h, t4 = clamp(1-al,0,1);
+      var pun = Math.min(1, 0.15 + t4*3.4);          // la punta se dispara al salir
+      var capas = 3, i4, f4, hh4;
+      for(i4=0;i4<capas;i4++){
+        f4 = i4/(capas-1);
+        hh4 = H4*0.5*(1 - f4*0.70);
+        ctx.globalAlpha = al*(0.28 + 0.60*f4);
+        ctx.fillStyle = f4 > 0.6 ? "#FFFFFF" : a.color;
+        ctx.fillRect(0, -hh4, L4*pun, hh4*2);
+      }
+      ctx.globalAlpha = al*0.85;
+      ctx.fillStyle = "#DCF2FF";
+      for(i4=0;i4<8;i4++){
+        var u4 = (i4+0.5)/8, px4 = L4*pun*u4;
+        var sh4 = H4*(0.30 + 0.50*Math.abs(Math.sin(u4*9 + a.t*9)));
+        ctx.fillRect(Math.round(px4)-1, -sh4/2, 2, sh4);
+      }
+      ctx.globalAlpha = al;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(Math.round(L4*pun)-5, -H4*0.58, 5, H4*1.16);
       ctx.globalAlpha=1; ctx.restore();
     } else if(a.kind === "wave"){
-      ctx.globalAlpha=al*.8;
-      ctx.fillStyle=a.color;
-      for(var y2=-450;y2<450;y2+=26)
-        ctx.fillRect(a.x-a.w/2, a.y+y2, a.w, 12);
+      /* La Canción barre columnas enteras. Ahora son ondas de verdad: cada
+         banda ondula y late en lugar de ser una barra recta. */
+      var W3 = a.w, t3 = a.t, paso = 34;
+      for(var y2=-450;y2<450;y2+=paso){
+        var fase = y2*0.03 + t3*5;
+        var lat = 0.45 + 0.40*Math.abs(Math.sin(fase));
+        ctx.globalAlpha = al*0.85*lat;
+        ctx.fillStyle = (((y2/paso)|0) & 1) ? "#F0E0FF" : a.color;
+        for(var xx=-W3/2; xx<W3/2; xx+=10){
+          var oy3 = Math.sin(xx*0.055 + fase)*7;
+          var hh3 = 4 + 3*Math.cos(xx*0.055 + fase);
+          ctx.fillRect(Math.round(a.x+xx), Math.round(a.y+y2+oy3), 10, Math.max(2, hh3));
+        }
+      }
       ctx.globalAlpha=1;
     } else if(a.kind === "blast"){
       ctx.globalAlpha=al;
