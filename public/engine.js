@@ -163,6 +163,15 @@
   }
   function area(o){
     o.max = o.life; o.t = 0; o.hitSet = null; o.acc = 0;
+    /* Dos datos que, si faltan, no fallan a gritos sino en silencio:
+       - sin ángulo, el giro inverso de la caja sale NaN y la zona no toca
+         a nadie, porque toda comparación con NaN es falsa;
+       - sin radio, el dibujo sale en NaN y no se ve nada.
+       Cuatro zonas del juego —las plumas del Ala Fantasma, las llamas y dos
+       de las arcanas— llevaban tiempo sin hacer ni mostrar nada por esto.
+       Se rellenan aquí, al crearlas, para que no vuelva a pasar. */
+    if(o.ang === undefined) o.ang = 0;
+    if(o.r === undefined && o.w !== undefined) o.r = Math.max(o.w, o.h) * 0.5;
     areas.push(o);
     return o;
   }
