@@ -1211,8 +1211,10 @@
     // suelo, caminos, parcelas y detalle: cuatro capas por trozos cacheados
     V.world.draw(ctx, cam.x, cam.y, zoom, w, h, stageKey);
 
-    // zonas de daño
-    for(var i=0;i<areas.length;i++) drawArea(areas[i]);
+    /* Zonas de daño, bajo los cuerpos. El látigo es la excepción: sale de la
+       mano y golpea por delante, así que se pinta después de todo el mundo,
+       más abajo. Si fuera aquí, los enemigos a los que pega lo taparían. */
+    for(var i=0;i<areas.length;i++) if(areas[i].anim !== "latigo") drawArea(areas[i]);
 
     // gemas y objetos
     for(var g=0;g<gems.length;g++){
@@ -1398,6 +1400,9 @@
       }
     }
 
+    // el látigo, por encima de héroes y enemigos
+    for(var la=0;la<areas.length;la++) if(areas[la].anim === "latigo") drawArea(areas[la]);
+
     for(var pa2=0;pa2<parts.length;pa2++){
       var pt2=parts[pa2];
       ctx.globalAlpha=clamp(pt2.life*2.4,0,1);
@@ -1441,18 +1446,98 @@
     }
   }
 
+  /* ---------------- barrido ----------------
+     Una media luna que cruza por delante, dibujada con dos arcos: el de
+     fuera a la distancia del alcance y el de dentro un poco más acá. Al
+     cerrarlos queda punta fina en los extremos y cuerpo en el medio, que es
+     lo que hace que se lea como un tajo y no como una raya.
+
+     Va en código y no en imagen a propósito: así toma el color del arma que
+     lo lanza, se estira al alcance que tenga en ese momento, nunca se ve
+     borrosa por mucho que se agrande y no cuesta un solo byte de descarga. */
+  function barrido(alcance, alto, color, t){
+    /* Se dibuja en local: origen en la mano, el tajo sale hacia +x. Quien
+       llama ya ha colocado y girado el lienzo. */
+    var R = Math.max(1, alcance);
+    var escY = (alto*0.5) / R;                    // aplastado: mucho ancho, poco alto
+    var med = Math.sin(Math.min(1, t*1.12) * Math.PI);
+    var centro = -0.95 + 1.9*t;                   // entra por arriba y sale por abajo
+    var media  = 0.30 + 0.92*med;
+    var g0 = centro - media, g1 = centro + media;
+    var grosor = R * (0.10 + 0.30*Math.pow(med, 0.7));
+    var N = 24;
+    function luna(gr){
+      var i, u, g, rr;
+      ctx.beginPath();
+      for(i=0;i<=N;i++){
+        u = i/N; g = g0 + (g1-g0)*u;
+        ctx.lineTo(Math.cos(g)*R, Math.sin(g)*R*escY);
+      }
+      for(i=N;i>=0;i--){
+        u = i/N; g = g0 + (g1-g0)*u;
+        rr = R - gr*Math.sin(Math.PI*u);
+        ctx.lineTo(Math.cos(g)*rr, Math.sin(g)*rr*escY);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.save();
+    var a0 = clamp(t < .12 ? t/.12 : (1-t)/.55, 0, 1);
+    /* El cuerpo va translúcido a propósito: un tajo opaco tapa justo a los
+       enemigos que estás golpeando, que es lo que quieres ver. Con las armas
+       de color casi blanco —el Viento Sacro, la Espada de la Victoria— la
+       diferencia entre 0,92 y 0,55 es la que hay entre una mancha maciza y
+       un barrido. */
+    ctx.globalAlpha = a0 * 0.55;
+    ctx.fillStyle = color;
+    luna(grosor);
+    /* y el filo, una media luna más fina pegada al borde de fuera: es lo que
+       le da el brillo de metal. Sin él queda una mancha plana. */
+    ctx.globalAlpha = a0 * 0.80;
+    ctx.fillStyle = "#FFF4E2";
+    luna(grosor*0.26);
+    ctx.restore();
+  }
+  /* Dónde nace el tajo: la mano si el arma la guardó, y si no, el borde de
+     atrás de su caja de daño. */
+  function origenTajo(a){
+    var ang = a.ang || 0;
+    if(a.ox !== undefined) return {x:a.ox, y:a.oy, ang:ang};
+    return {x:a.x - Math.cos(ang)*a.w*0.5, y:a.y - Math.sin(ang)*a.w*0.5, ang:ang};
+  }
+
   function drawArea(a){
     var al = clamp(a.life/(a.max||1),0,1);
-    if(a.kind === "slash"){
-      ctx.save(); ctx.translate(Math.round(a.x),Math.round(a.y)); ctx.rotate(a.ang);
-      ctx.globalAlpha = al;
-      ctx.fillStyle = a.color;
-      var W2=a.w, H2=a.h;
-      for(var i=0;i<5;i++){
-        var t=i/4;
-        ctx.fillRect(-W2/2+t*W2*.95, -H2/2*(1-Math.abs(t-.5)*1.2), W2*.09, H2*(1-Math.abs(t-.5)*1.2));
-      }
-      ctx.globalAlpha=1; ctx.restore();
+    if(a.kind === "slash" && a.anim === "latigo" && V.LATIGO && V.LATIGO.img
+       && V.LATIGO_ESTILO !== "barrido"){
+      /* Látigo dibujado: ocho fotogramas repartidos por la vida del área, y
+         la escala sale del alcance real del arma dividido entre el del
+         dibujo, así que el chasquido llega justo hasta donde llega el daño.
+         Se voltea con scale, no con rotate: un giro de media vuelta lo
+         pondría además del revés. */
+      var L = V.LATIGO;
+      var fr = clamp(Math.floor((1-al)*L.n), 0, L.n-1);
+      var k = (a.w || 104) / L.alcance;
+      ctx.save();
+      ctx.translate(Math.round(a.ox), Math.round(a.oy));
+      if(a.dir < 0) ctx.scale(-1, 1);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(L.img, fr*L.cw, 0, L.cw, L.ch,
+                    -L.ax*k, -L.ay*k, L.cw*k, L.ch*k);
+      ctx.restore();
+      ctx.imageSmoothingEnabled = false;
+    }
+    else if(a.kind === "slash"){
+      /* Media luna en vez de las cinco barras planas de antes. El Viento
+         Sacro y la Espada de la Victoria también pasan por aquí, así que
+         ganan el tajo sin tocar nada suyo. */
+      var o = origenTajo(a);
+      ctx.save();
+      ctx.translate(Math.round(o.x), Math.round(o.y));
+      ctx.rotate(o.ang);
+      barrido(a.w, a.h, a.color, clamp(1-al, 0, 1));
+      ctx.restore();
     } else if(a.kind === "pool"){
       ctx.globalAlpha = Math.min(1, al*1.4);
       ctx.fillStyle = a.color;
