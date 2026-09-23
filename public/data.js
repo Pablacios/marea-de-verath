@@ -104,7 +104,11 @@
      sus hojas. Si alguna falta, se usa la pose lateral y no pasa nada. */
   V.HEROART = {};
   (function(){
-    var VISTAS = ["frente","espalda","lado"];
+    /* Solo la vista de lado. Desde que los héroes van siempre de perfil, las
+       poses de frente y de espaldas no se dibujan nunca: pedirlas era
+       descargar treinta y dos imágenes para nada y llenar la consola de
+       errores por las que ni siquiera existen. */
+    var VISTAS = ["lado"];
     function carga(key, vista, ruta, destino){
       var img = new Image();
       img.decoding = "async";
@@ -126,7 +130,8 @@
      deduce cuántos pasos hay dividiendo el ancho entre el alto. */
   V.HEROCAM = {};
   (function(){
-    var VISTAS = ["frente","espalda","lado"];
+    // igual aquí: de perfil y punto
+    var VISTAS = ["lado"];
     for(var k in V.CAMINATAS){
       for(var i=0;i<VISTAS.length;i++) (function(key, vista){
         var img = new Image();
@@ -142,6 +147,35 @@
   V.tiraHeroe = function(key, vista){
     var t = V.HEROCAM[key];
     return t ? (t[vista] || null) : null;
+  };
+
+  /* ---------------- caminata de perfil, izquierda y derecha ----------------
+     Hojas nuevas: ocho pasos por lado, cada lado con su propio dibujo en vez
+     de espejar uno solo. Las celdas NO son cuadradas —cada héroe tiene el
+     ancho que necesita— así que el número de pasos es fijo, ocho, y el ancho
+     de celda sale de dividir la tira entre ocho. Los pies van apoyados
+     siempre a la misma altura de la celda, que es lo que evita que el
+     personaje bote al animarse. */
+  V.HEROLADO = {};
+  V.LADO_PASOS = 8;
+  (function(){
+    var CON_LADO = ["cazador", "vicaria", "doctor", "bestia"];
+    for(var i=0;i<CON_LADO.length;i++){
+      var lados = ["izq", "der"];
+      for(var j=0;j<2;j++) (function(key, lado){
+        var img = new Image();
+        img.decoding = "async";
+        img.onload = function(){
+          V.HEROLADO[key] = V.HEROLADO[key] || {};
+          V.HEROLADO[key][lado] = img;
+        };
+        img.src = "arte/h_" + key + "_" + lado + ".webp";
+      })(CON_LADO[i], lados[j]);
+    }
+  })();
+  V.ladoHeroe = function(key, lado){
+    var h = V.HEROLADO[key];
+    return h ? (h[lado] || null) : null;
   };
 
   /* ---------------- arboleda pintada ----------------
@@ -217,6 +251,19 @@
 
   /* La casa dibujada. Se tiñe por distrito en props64, que es donde se
      arma el mobiliario. */
+  /* Animación del látigo: ocho fotogramas en fila, celdas de 272x160, con el
+     mango siempre en el mismo punto de la celda —(14,112)— para que al
+     animarse no baile. El dibujo alcanza 251 px desde el mango; el motor lo
+     escala al alcance que tenga el arma en ese momento, así que sube con las
+     mejoras de área sin tocar nada aquí. */
+  V.LATIGO = {img:null, n:8, cw:272, ch:160, ax:14, ay:112, alcance:251};
+  (function(){
+    var img = new Image();
+    img.decoding = "async";
+    img.onload = function(){ V.LATIGO.img = img; };
+    img.src = "arte/w_latigo.webp";
+  })();
+
   V.CASA = null;
   (function(){
     var img = new Image();

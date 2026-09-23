@@ -1062,14 +1062,52 @@
     ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(x, y, w, 1);
   }
 
-  /* Vista según hacia dónde camina: de frente si baja, de espaldas si sube,
-     de lado si va en horizontal. La última vista se recuerda al pararse. */
-  function vistaDe(pl){
-    if(!pl.moving) return pl.vista || "lado";
-    var mx = pl.aimx, my = pl.aimy;
-    if(Math.abs(mx) >= Math.abs(my)*0.85) pl.vista = "lado";
-    else pl.vista = my > 0 ? "frente" : "espalda";
-    return pl.vista;
+  /* Los héroes se ven siempre de perfil. Antes había tres vistas —de frente
+     al bajar, de espaldas al subir, de lado en horizontal— y al andar en
+     diagonal el personaje giraba sobre sí mismo cada dos pasos. De perfil
+     siempre, mirando al último lado hacia el que fue, se lee mejor y es lo
+     que hacen los juegos de esta clase. */
+  function vistaDe(pl){ return "lado"; }
+
+  /* Hacia qué lado mira, que es lo único que decide ya el dibujo. Al andar
+     en vertical puro se conserva el último, para que no dé un volantazo. */
+  function ladoDe(pl){
+    if(pl.moving && Math.abs(pl.aimx) > 0.15) pl.lado = pl.aimx < 0 ? "izq" : "der";
+    else if(!pl.lado) pl.lado = (pl.face || 1) < 0 ? "izq" : "der";
+    return pl.lado;
+  }
+
+  /* ---------------- caminata de perfil ----------------
+     Tira de ocho pasos con su propio dibujo por lado, así que aquí no se
+     voltea nada: el de la izquierda es el dibujo de la izquierda. La celda
+     no es cuadrada; su ancho sale de dividir la tira entre los ocho pasos.
+     Los pies están siempre a la misma altura dentro de la celda, así que
+     basta con apoyar el borde de abajo para que no bote. */
+  function dibujaHeroeLado(pl, tira, lado){
+    var n = V.LADO_PASOS || 8;
+    var cel = tira.width / n;
+    var i = pl.moving ? (Math.floor(pl.walk * 0.95) % n + n) % n : 0;
+    var alto = 34 * (V.HERO_SCALE || 1.9);
+    var ancho = alto * (cel / tira.height);
+    var margen = alto * (4 / tira.height);      // el aire bajo los pies
+    var pie = pl.y + 9 + margen;
+
+    sombraDe("L#"+pl.hero+lado, tira, i*cel, 0, cel, tira.height,
+             pl.x, pl.y + 9, ancho, alto, false);
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.translate(Math.round(pl.x), Math.round(pie));
+    if(pl.iframe > 0 && Math.floor(performance.now()/60)%2) ctx.globalAlpha = .5;
+    ctx.drawImage(tira, i*cel, 0, cel, tira.height, -ancho/2, -alto, ancho, alto);
+    if(pl.hurt > 0){
+      ctx.globalAlpha = Math.min(1, pl.hurt*4);
+      var bl = siluetaBlanca("L#"+pl.hero+lado, tira);
+      ctx.drawImage(bl, i*cel, 0, cel, tira.height, -ancho/2, -alto, ancho, alto);
+    }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
   }
 
   /* ---------------- el paso ----------------
@@ -1360,14 +1398,21 @@
         var ww=pl.weapons[wd];
         if(ww.def.draw) ww.def.draw(pl, ww, ctx);
       }
+      var ladoP = ladoDe(pl);
+      /* Primero la hoja de perfil, que es la buena. Los héroes que todavía
+         no la tienen siguen con su dibujo de antes, pero ya solo de lado. */
+      var perfil = V.ladoHeroe ? V.ladoHeroe(pl.hero, ladoP) : null;
       var vistaP = vistaDe(pl);
-      var pintado = V.vistaHeroe ? V.vistaHeroe(pl.hero, vistaP) : null;
+      var pintado = perfil || (V.vistaHeroe ? V.vistaHeroe(pl.hero, vistaP) : null);
       if(pintado){
-        /* Si su hoja traía los pasos dibujados, se usan; si no, el paso lo
-           construye el motor a partir de la pose quieta. */
-        var tiraP = V.tiraHeroe ? V.tiraHeroe(pl.hero, vistaP) : null;
-        if(tiraP) dibujaHeroeTira(pl, tiraP, pintado, vistaP);
-        else dibujaHeroePintado(pl, pintado, vistaP);
+        if(perfil) dibujaHeroeLado(pl, perfil, ladoP);
+        else {
+          /* Si su hoja traía los pasos dibujados, se usan; si no, el paso lo
+             construye el motor a partir de la pose quieta. */
+          var tiraP = V.tiraHeroe ? V.tiraHeroe(pl.hero, vistaP) : null;
+          if(tiraP) dibujaHeroeTira(pl, tiraP, pintado, vistaP);
+          else dibujaHeroePintado(pl, pintado, vistaP);
+        }
         if(players.length>1){
           ctx.fillStyle="rgba(7,6,14,.8)";
           ctx.fillRect(Math.round(pl.x)-7, Math.round(pl.y)-64, 14, 12);
