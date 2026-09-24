@@ -1087,7 +1087,7 @@
     var n = V.LADO_PASOS || 8;
     var cel = tira.width / n;
     var i = pl.moving ? (Math.floor(pl.walk * 0.95) % n + n) % n : 0;
-    var alto = 34 * (V.HERO_SCALE || 1.9);
+    var alto = 34 * (V.escalaHeroe ? V.escalaHeroe(pl.hero) : (V.HERO_SCALE || 1.9));
     var ancho = alto * (cel / tira.height);
     var margen = alto * (4 / tira.height);      // el aire bajo los pies
     var pie = pl.y + 9 + margen;
@@ -1128,7 +1128,7 @@
     var n = Math.max(1, Math.round(tira.width / tira.height));
     var cel = tira.width / n;
     var i = pl.moving ? (Math.floor(pl.walk * 0.95) % n + n) % n : 0;
-    var base = 30 * (V.HERO_SCALE || 1.9);
+    var base = 30 * (V.escalaHeroe ? V.escalaHeroe(pl.hero) : (V.HERO_SCALE || 1.9));
     var alto = base * (tira.height / Math.max(1, quieto.height));
     var ancho = alto * (cel / tira.height);
     var lateral = (vista === "lado");
@@ -1155,7 +1155,7 @@
   }
 
   function dibujaHeroePintado(pl, img, vista){
-    var alto = 30 * (V.HERO_SCALE || 1.9);
+    var alto = 30 * (V.escalaHeroe ? V.escalaHeroe(pl.hero) : (V.HERO_SCALE || 1.9));
     var ancho = alto * (img.width / img.height);
     var lateral = (vista === "lado");
 

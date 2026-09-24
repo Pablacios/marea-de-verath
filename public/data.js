@@ -294,7 +294,22 @@
     return h[vista] || h.lado || h.pose || h.frente || h.espalda || null;
   };
 
-  V.HERO_SCALE = 1.9;
+  /* Medido en pantalla restando el fondo: el héroe daba 60 unidades de alto
+     y el aldeano de la primera oleada 39. Era vez y media más grande, y por
+     eso se sentía desproporcionado. A 1.24 los dos miden lo mismo, que
+     además es lo coherente con el juego: el radio de colisión del héroe ya
+     era 11, igual que el del aldeano, así que el dibujo por fin cuadra con
+     el hueco que de verdad ocupa. Solo cambia el dibujo; el alcance de las
+     armas, los radios y las colisiones siguen exactamente igual. */
+  V.HERO_SCALE = 1.24;
+
+  /* Retoques por héroe sobre esa escala. La Niña Pálida es una niña: tiene
+     que verse más pequeña que los adultos aunque el dibujo venga del mismo
+     tamaño. */
+  V.ESCALA_HEROE = { nina: 0.85 };
+  V.escalaHeroe = function(key){
+    return (V.HERO_SCALE || 1.9) * ((V.ESCALA_HEROE && V.ESCALA_HEROE[key]) || 1);
+  };
   /* Enemigos y mobiliario suben con él para que las proporciones cuadren.
      Solo cambia el dibujo: los radios de colisión siguen igual, así que el
      juego se comporta exactamente como antes. */
